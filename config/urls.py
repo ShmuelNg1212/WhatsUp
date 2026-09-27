@@ -1,9 +1,12 @@
 from django.contrib import admin
 from django.urls import include, path
-from django.views.generic import TemplateView
+
+from accounts.views import home
 
 urlpatterns = [
-    path("", TemplateView.as_view(template_name="landing.html"), name="home"),
+    path("", home, name="home"),
     path("accounts/", include("accounts.urls")),
+    path("feed/", include("posts.urls")),
+    path("ads/", include("ads.urls")),
     path("admin/", admin.site.urls),
 ]

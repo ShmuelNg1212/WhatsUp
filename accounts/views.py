@@ -1,5 +1,5 @@
 from django.contrib.auth import login
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render
 from django.views.generic import CreateView
 
 from .forms import AdvertiserSignupForm, RegularSignupForm
@@ -24,3 +24,13 @@ class SignupView(CreateView):
 class AdvertiserSignupView(SignupView):
     form_class = AdvertiserSignupForm
     extra_context = {"heading": "Create an advertiser account", "account_type": "advertiser"}
+
+
+def home(request):
+    """Send each visitor to the right starting page for their role."""
+    user = request.user
+    if not user.is_authenticated:
+        return render(request, "landing.html")
+    if user.is_advertiser:
+        return redirect("ads:dashboard")
+    return redirect("posts:feed")
