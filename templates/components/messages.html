@@ -1,0 +1,12 @@
+{# Flash messages. Include once per layout. #}
+{% if messages %}
+  <ul class="mb-6 space-y-2" role="status">
+    {% for message in messages %}
+      <li class="flex items-start gap-3 rounded-xl px-4 py-3 text-sm shadow-sm ring-1 ring-inset
+        {% if message.level_tag == 'error' %}bg-red-50 text-red-800 ring-red-200{% elif message.level_tag == 'success' %}bg-emerald-50 text-emerald-800 ring-emerald-200{% else %}bg-white text-sage-800 ring-sage-300{% endif %}">
+        {% if message.level_tag == 'error' %}{% include "components/icon.html" with name="exclamation-circle" cls="h-5 w-5 text-red-500" %}{% elif message.level_tag == 'success' %}{% include "components/icon.html" with name="check-circle" cls="h-5 w-5 text-emerald-500" %}{% else %}{% include "components/icon.html" with name="info" cls="h-5 w-5 text-sage-600" %}{% endif %}
+        <span>{{ message }}</span>
+      </li>
+    {% endfor %}
+  </ul>
+{% endif %}

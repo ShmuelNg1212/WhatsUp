@@ -1,45 +1,116 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>{% block title %}WhatsUp{% endblock %} · WhatsUp</title>
-  {# Tailwind browser build: development only. Replace with a compiled build before production. #}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  {# Tailwind browser build: development only. Swap for a compiled build before production (doc/wiki/design-system.md). #}
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <style type="text/tailwindcss">
+    /* ── Design tokens ─────────────────────────────── doc/wiki/design-system.md */
+    @theme {
+      --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+      /* Brand: the single vibrant accent (mockup magenta). 600 = AA with white text. */
+      --color-brand-50:  #FDF2F7;
+      --color-brand-100: #FCE4EF;
+      --color-brand-200: #F9C9DE;
+      --color-brand-300: #F49DC0;
+      --color-brand-400: #EC6197;
+      --color-brand-500: #E0266F;
+      --color-brand-600: #D91F68;
+      --color-brand-700: #BE1A5A;
+      --color-brand-800: #9C184C;
+      --color-brand-900: #821944;
+
+      /* Sage: neutral ramp built on the palette (DEF2C8 · C5DAC1 · BCD0C7 · A9B2AC · 898980). */
+      --color-sage-50:  #F6F9F3;
+      --color-sage-100: #EEF4E8;
+      --color-sage-200: #DEF2C8;
+      --color-sage-300: #C5DAC1;
+      --color-sage-400: #BCD0C7;
+      --color-sage-500: #A9B2AC;
+      --color-sage-600: #898980;
+      --color-sage-700: #5E625C;
+      --color-sage-800: #3C403B;
+      --color-sage-900: #232622;
+
+      --shadow-card: 0 1px 2px rgb(35 38 34 / 0.04), 0 6px 20px -8px rgb(35 38 34 / 0.10);
+      --shadow-card-hover: 0 2px 4px rgb(35 38 34 / 0.05), 0 12px 28px -10px rgb(35 38 34 / 0.16);
+    }
+
+    @layer base {
+      html { -webkit-tap-highlight-color: transparent; }
+      ::selection { background: var(--color-brand-100); color: var(--color-brand-900); }
+    }
+
+    /* ── Components ────────────────────────────────── keep in sync with the wiki */
     @layer components {
-      .form-stack p { @apply mb-4; }
-      .form-stack label { @apply block text-sm font-medium text-slate-700 mb-1; }
-      .form-stack input:not([type=checkbox]), .form-stack select, .form-stack textarea {
-        @apply w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200;
+      .card { @apply rounded-2xl border border-sage-300/50 bg-white shadow-card; }
+      .card-hover { @apply transition-shadow hover:shadow-card-hover; }
+
+      .btn { @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold whitespace-nowrap transition
+                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 disabled:opacity-50; }
+      .btn-primary   { @apply bg-brand-600 text-white shadow-sm hover:bg-brand-700; }
+      .btn-secondary { @apply bg-white text-sage-900 ring-1 ring-inset ring-sage-300 hover:bg-sage-50; }
+      .btn-ghost     { @apply text-sage-700 hover:bg-sage-100 hover:text-sage-900; }
+      .btn-danger    { @apply bg-red-600 text-white shadow-sm hover:bg-red-700; }
+      .btn-sm        { @apply rounded-lg px-3 py-1.5 text-xs; }
+
+      .input,
+      .field input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=hidden]),
+      .field select, .field textarea,
+      .form-stack input:not([type=checkbox]):not([type=file]):not([type=hidden]), .form-stack select, .form-stack textarea {
+        @apply block w-full rounded-xl border-0 bg-white px-3.5 py-2.5 text-sm text-sage-900 shadow-sm outline-none
+               ring-1 ring-inset ring-sage-300 placeholder:text-sage-600 transition focus:ring-2 focus:ring-brand-500;
       }
-      .form-stack .helptext { @apply block text-xs text-slate-500 mt-1; }
-      .form-stack .errorlist { @apply text-sm text-red-600 mb-1; }
-      .btn { @apply inline-block rounded-lg px-4 py-2 font-medium transition; }
-      .btn-primary { @apply bg-indigo-600 text-white hover:bg-indigo-700; }
-      .btn-secondary { @apply border border-slate-300 bg-white text-slate-700 hover:bg-slate-50; }
+      .field input[type=file], .form-stack input[type=file] {
+        @apply block w-full text-sm text-sage-700 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-sage-100
+               file:px-3 file:py-2 file:text-sm file:font-semibold file:text-sage-800 hover:file:bg-sage-200;
+      }
+      .field input[type=checkbox] { @apply h-4 w-4 rounded border-sage-400 accent-brand-600; }
+      .field-invalid input:not([type=checkbox]):not([type=file]), .field-invalid select, .field-invalid textarea { @apply ring-red-400 focus:ring-red-500; }
+      .field-label { @apply mb-1.5 block text-sm font-medium text-sage-900; }
+      .field-help  { @apply mt-1.5 text-xs text-sage-700; }
+      .field-error { @apply mt-1.5 text-xs font-medium text-red-600; }
+      /* Legacy form markup (pre-overhaul) */
+      .form-stack p { @apply mb-4; }
+      .form-stack label { @apply mb-1.5 block text-sm font-medium text-sage-900; }
+      .form-stack .helptext { @apply mt-1 block text-xs text-sage-700; }
+      .form-stack .errorlist { @apply mb-1 text-xs font-medium text-red-600; }
+
+      .chip { @apply inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-medium text-sage-800 ring-1 ring-inset ring-sage-300; }
+
+      .nav-link { @apply flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-sage-700 transition hover:bg-sage-100 hover:text-sage-900; }
+      .nav-link-active { @apply bg-brand-50 text-brand-700 hover:bg-brand-50 hover:text-brand-700; }
+
+      .table { @apply w-full text-left text-sm; }
+      .table th { @apply bg-sage-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-sage-700; }
+      .table td { @apply border-t border-sage-300/40 px-4 py-3.5 align-middle; }
+      .table tbody tr { @apply transition hover:bg-sage-50/60; }
+
+      .link { @apply font-medium text-brand-700 hover:text-brand-800 hover:underline; }
+      .eyebrow { @apply text-xs font-semibold uppercase tracking-wider text-sage-700; }
     }
   </style>
+  {% block head %}{% endblock %}
 </head>
-<body class="min-h-screen bg-slate-50 text-slate-900">
-  <header class="border-b border-slate-200 bg-white">
-    <nav class="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
-      <a href="{% url 'home' %}" class="text-lg font-bold text-indigo-600">WhatsUp</a>
-      <div class="flex items-center gap-3 text-sm">
-        {% block nav %}{% include "partials/nav.html" %}{% endblock %}
-      </div>
-    </nav>
-  </header>
-
-  <main class="mx-auto max-w-4xl px-4 py-8">
-    {% if messages %}
-      <ul class="mb-6 space-y-2">
-        {% for message in messages %}
-          <li class="rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm text-indigo-800">{{ message }}</li>
-        {% endfor %}
-      </ul>
-    {% endif %}
-    {% block content %}{% endblock %}
-  </main>
+<body class="min-h-full bg-sage-50 font-sans text-sage-900 antialiased">
+  {% block body %}
+    {# Fallback shell for pages that don't use a layout yet. #}
+    <header class="border-b border-sage-300/50 bg-white">
+      <nav class="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
+        <a href="{% url 'home' %}" class="text-lg font-bold text-brand-600">WhatsUp</a>
+        <div class="flex items-center gap-3 text-sm">{% block nav %}{% include "partials/nav.html" %}{% endblock %}</div>
+      </nav>
+    </header>
+    <main class="mx-auto max-w-4xl px-4 py-8">
+      {% include "components/messages.html" %}
+      {% block content %}{% endblock %}
+    </main>
+  {% endblock %}
 </body>
 </html>

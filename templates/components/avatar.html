@@ -1,0 +1,4 @@
+{% load ui %}{# Initials avatar. Expects `user`; optional `size`: xs | sm | md (default) | lg | xl. #}
+<span class="inline-flex shrink-0 select-none items-center justify-center rounded-full font-semibold ring-2 ring-white {{ user|avatar_tone }}
+  {% if size == 'xs' %}h-6 w-6 text-[10px]{% elif size == 'sm' %}h-8 w-8 text-xs{% elif size == 'lg' %}h-14 w-14 text-lg{% elif size == 'xl' %}h-24 w-24 text-3xl ring-4{% else %}h-10 w-10 text-sm{% endif %}"
+  aria-hidden="true">{{ user|initials }}</span>

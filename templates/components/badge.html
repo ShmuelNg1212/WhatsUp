@@ -1,0 +1,9 @@
+{% comment %}
+  Pill badge. label (required); tone: brand | sage | green | sky | amber | slate (default) | red.
+  Optional: state (rendered as data-state), testid, dot=True for a leading status dot.
+{% endcomment %}
+<span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold
+  {% if tone == 'brand' %}bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-200{% elif tone == 'sage' %}bg-sage-200 text-sage-800{% elif tone == 'green' %}bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200{% elif tone == 'sky' %}bg-sky-50 text-sky-700 ring-1 ring-inset ring-sky-200{% elif tone == 'amber' %}bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200{% elif tone == 'red' %}bg-red-50 text-red-700 ring-1 ring-inset ring-red-200{% else %}bg-sage-100 text-sage-700 ring-1 ring-inset ring-sage-300{% endif %}"
+  {% if state %}data-state="{{ state }}"{% endif %}{% if testid %} data-testid="{{ testid }}"{% endif %}>
+  {% if dot %}<span class="h-1.5 w-1.5 rounded-full {% if tone == 'green' %}bg-emerald-500{% elif tone == 'sky' %}bg-sky-500{% elif tone == 'amber' %}bg-amber-500{% elif tone == 'brand' %}bg-brand-500{% else %}bg-sage-600{% endif %}"></span>{% endif %}{{ label }}
+</span>
