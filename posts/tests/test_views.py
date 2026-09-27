@@ -177,7 +177,8 @@ class LikeToggleTests(TestCase):
     def test_like_button_reflects_state(self):
         self.client.post(self.url)
         response = self.client.get(self.post.get_absolute_url())
-        self.assertContains(response, "♥ Liked · 1")
+        self.assertContains(response, 'data-testid="like-button" data-liked="true"')
+        self.assertContains(response, 'data-testid="like-count">1<')
 
 
 class CommentTests(TestCase):
@@ -244,16 +245,20 @@ class ProfileTests(TestCase):
     def test_shows_follow_button_when_not_following(self):
         response = self.client.get(profile_url(self.bob))
         self.assertFalse(response.context["is_following"])
-        self.assertContains(response, ">Follow</button>")
+        self.assertContains(response, 'data-testid="profile-follow-button" data-following="false"')
 
     def test_shows_unfollow_button_when_following(self):
         Follow.objects.create(follower=self.alice, following=self.bob)
-        self.assertContains(self.client.get(profile_url(self.bob)), ">Unfollow</button>")
+        self.assertContains(
+            self.client.get(profile_url(self.bob)),
+            'data-testid="profile-follow-button" data-following="true"',
+        )
 
     def test_own_profile_has_no_follow_button(self):
         response = self.client.get(profile_url(self.alice))
         self.assertContains(response, "This is you")
-        self.assertNotContains(response, ">Follow</button>")
+        # Other users' follow buttons (e.g. suggestions) may appear; the profile header must not have one.
+        self.assertNotContains(response, 'data-testid="profile-follow-button"')
 
     def test_unknown_user_is_404(self):
         self.assertEqual(self.client.get("/u/nobody/").status_code, 404)
@@ -315,7 +320,7 @@ class PeopleTests(TestCase):
         Follow.objects.create(follower=self.alice, following=self.bob)
         response = self.client.get(reverse("posts:people"))
         self.assertTrue(response.context["people"][0].followed_by_me)
-        self.assertContains(response, ">Unfollow</button>")
+        self.assertContains(response, 'data-testid="follow-button" data-following="true"')
 
 
 class SocialGatingTests(TestCase):

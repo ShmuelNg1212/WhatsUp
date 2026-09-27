@@ -16,11 +16,10 @@
     <form method="post" action="{% url 'posts:like' post.pk %}">
       {% csrf_token %}
       <input type="hidden" name="next" value="{{ request.get_full_path }}#post-{{ post.pk }}">
-      {% if post.liked_by_me %}
-        <button type="submit" class="font-medium text-rose-600 hover:text-rose-700" aria-pressed="true">♥ Liked · {{ post.like_count }}</button>
-      {% else %}
-        <button type="submit" class="text-slate-600 hover:text-rose-600" aria-pressed="false">♡ Like · {{ post.like_count }}</button>
-      {% endif %}
+      <button type="submit" class="{% if post.liked_by_me %}font-medium text-rose-600{% else %}text-slate-600{% endif %} hover:text-rose-600"
+              data-testid="like-button" data-liked="{{ post.liked_by_me|yesno:'true,false' }}" aria-pressed="{{ post.liked_by_me|yesno:'true,false' }}">
+        {% if post.liked_by_me %}♥ Liked{% else %}♡ Like{% endif %} · <span data-testid="like-count">{{ post.like_count }}</span>
+      </button>
     </form>
     <a href="{{ post.get_absolute_url }}" class="text-slate-600 hover:text-indigo-600">💬 {{ post.comment_count }} comment{{ post.comment_count|pluralize }}</a>
   </footer>

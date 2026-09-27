@@ -1,10 +1,7 @@
-{# Expects `target` (a User) and `following` (bool). #}
+{# Expects `target` (a User) and `following` (bool). Optional `testid` (default "follow-button"). #}
 <form method="post" action="{% url 'posts:follow' target.username %}">
   {% csrf_token %}
   <input type="hidden" name="next" value="{{ request.get_full_path }}">
-  {% if following %}
-    <button type="submit" class="btn btn-secondary py-1.5 text-sm">Unfollow</button>
-  {% else %}
-    <button type="submit" class="btn btn-primary py-1.5 text-sm">Follow</button>
-  {% endif %}
+  <button type="submit" class="btn {% if following %}btn-secondary{% else %}btn-primary{% endif %} py-1.5 text-sm"
+          data-testid="{{ testid|default:'follow-button' }}" data-following="{{ following|yesno:'true,false' }}">{% if following %}Unfollow{% else %}Follow{% endif %}</button>
 </form>
