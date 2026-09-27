@@ -2,7 +2,7 @@ from decimal import Decimal
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.core.validators import MinValueValidator
+from django.core.validators import MaxLengthValidator, MinValueValidator, URLValidator
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
@@ -129,3 +129,54 @@ class Campaign(models.Model):
     @property
     def is_live(self):
         return self.state == self.State.LIVE
+
+
+AD_HEADLINE_MAX_LENGTH = 90
+AD_BODY_MAX_LENGTH = 300
+
+
+class AdUnit(models.Model):
+    """
+    One advertisement inside a campaign. Its owner is always derived from
+    `campaign.advertiser` and never stored separately.
+    """
+
+    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE, related_name="ad_units")
+    headline = models.CharField(max_length=AD_HEADLINE_MAX_LENGTH)
+    body = models.TextField(
+        "body text",
+        max_length=AD_BODY_MAX_LENGTH,
+        validators=[MaxLengthValidator(AD_BODY_MAX_LENGTH)],
+    )
+    image = models.ImageField(upload_to="ads/%Y/%m/", blank=True)
+    target_url = models.URLField(
+        "target URL",
+        max_length=500,
+        validators=[URLValidator(schemes=["http", "https"])],
+        help_text="Where people go when they click the ad (http or https).",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["created_at", "id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=~models.Q(headline=""),
+                name="ads_adunit_headline_not_empty",
+            ),
+            models.CheckConstraint(
+                condition=~models.Q(body=""),
+                name="ads_adunit_body_not_empty",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["campaign", "created_at"], name="ads_adunit_campaign_time_idx"),
+        ]
+
+    def __str__(self):
+        return self.headline
+
+    @property
+    def advertiser(self):
+        return self.campaign.advertiser

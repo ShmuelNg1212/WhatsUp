@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import AdvertiserProfile, Campaign
+from .models import AdUnit, AdvertiserProfile, Campaign
 
 
 @admin.register(AdvertiserProfile)
@@ -10,10 +10,24 @@ class AdvertiserProfileAdmin(admin.ModelAdmin):
     raw_id_fields = ("user",)
 
 
+class AdUnitInline(admin.StackedInline):
+    model = AdUnit
+    extra = 0
+
+
 @admin.register(Campaign)
 class CampaignAdmin(admin.ModelAdmin):
+    inlines = [AdUnitInline]
     list_display = ("name", "advertiser", "status", "budget", "start_date", "end_date")
     list_filter = ("status",)
     list_select_related = ("advertiser",)
     search_fields = ("name", "advertiser__username")
     raw_id_fields = ("advertiser",)
+
+
+@admin.register(AdUnit)
+class AdUnitAdmin(admin.ModelAdmin):
+    list_display = ("headline", "campaign", "target_url", "created_at")
+    list_select_related = ("campaign",)
+    search_fields = ("headline", "campaign__name")
+    raw_id_fields = ("campaign",)
