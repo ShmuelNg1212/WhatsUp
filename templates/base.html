@@ -71,7 +71,9 @@
                file:px-3 file:py-2 file:text-sm file:font-semibold file:text-sage-800 hover:file:bg-sage-200;
       }
       .field input[type=checkbox] { @apply h-4 w-4 rounded border-sage-400 accent-brand-600; }
-      .field-invalid input:not([type=checkbox]):not([type=file]), .field-invalid select, .field-invalid textarea { @apply ring-red-400 focus:ring-red-500; }
+      /* Must out-rank the .field input selector above (0,6,1 vs 0,5,1). */
+      .field.field-invalid input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=hidden]),
+      .field.field-invalid select, .field.field-invalid textarea { @apply bg-red-50/40 ring-red-400 focus:ring-red-500; }
       .field-label { @apply mb-1.5 block text-sm font-medium text-sage-900; }
       .field-help  { @apply mt-1.5 text-xs text-sage-700; }
       .field-error { @apply mt-1.5 text-xs font-medium text-red-600; }

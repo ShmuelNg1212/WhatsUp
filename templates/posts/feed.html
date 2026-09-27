@@ -10,7 +10,7 @@
     {% include "posts/_feed_item.html" %}
   {% empty %}
     {% url 'posts:people' as people_url %}
-    {% include "components/empty_state.html" with title="Your feed is empty." text="Write your first post above, or follow people to see theirs here." icon="home" action_label="Find people" action_href=people_url only %}
+    {% include "components/empty_state.html" with title="Your feed is empty." text="Write your first post above, or follow people to see theirs here." icon="home" action_label="Find people" action_href=people_url action_icon="users" only %}
   {% endfor %}
 </div>
 {% include "components/pagination.html" %}

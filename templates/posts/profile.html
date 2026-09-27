@@ -31,7 +31,7 @@
     {% include "posts/_post_card.html" %}
   {% empty %}
     {% if is_self %}
-      {% url 'posts:feed' as feed_url %}{% include "components/empty_state.html" with title="No posts yet." text="Share your first post from the feed." icon="pencil" action_label="Write a post" action_href=feed_url|add:"#compose" only %}
+      {% url 'posts:feed' as feed_url %}{% include "components/empty_state.html" with title="No posts yet." text="Share your first post from the feed." icon="pencil" action_label="Write a post" action_href=feed_url|add:"#compose" action_icon="pencil" only %}
     {% else %}
       {% include "components/empty_state.html" with title="No posts yet." text="When they post, it'll show up here." icon="pencil" only %}
     {% endif %}
