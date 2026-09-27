@@ -6,7 +6,10 @@
 | Language | Python 3.14 |
 | Framework | Django 6.1.1 |
 | Image handling | Pillow 12.3.0 (required by `ImageField`) |
-| Database | SQLite (development) |
+| Database | SQLite locally · **Neon Postgres** in production (`DATABASE_URL`, dj-database-url) |
+| Media storage | Local `media/` · **Cloudinary** in production |
+| Serving | `runserver` locally · **gunicorn + WhiteNoise on Render** in production ([deployment.md](deployment.md)) |
+| Configuration | django-environ: environment variables + optional `.env` |
 | Frontend | Server-rendered Django templates + Tailwind CSS v4 browser CDN (dev only; needs a compiled build before production). No JavaScript: every interaction is an HTML form POST or a plain link; menus use `<details>`. **Design system: [design-system.md](design-system.md)** (Inter, brand pink + sage neutrals, three layouts, `templates/components/`). |
 | Auth | `django.contrib.auth` with a custom user model |
 | Tests | Django's built-in test runner (`TestCase`) |
