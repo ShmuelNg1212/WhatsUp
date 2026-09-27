@@ -1,0 +1,6 @@
+{# One comment. Expects `comment` (author select_related). #}
+<li class="flex gap-2.5">
+  <a href="{% url 'posts:profile' comment.author.username %}" class="mt-0.5">{% include "components/avatar.html" with user=comment.author size="xs" only %}</a>
+  <p class="min-w-0 text-sm leading-relaxed"><a href="{% url 'posts:profile' comment.author.username %}" class="font-semibold hover:underline">{{ comment.author.username }}</a>
+    <span class="whitespace-pre-line break-words text-sage-800">{{ comment.body }}</span></p>
+</li>

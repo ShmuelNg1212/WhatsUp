@@ -1,25 +1,17 @@
 {% extends "layouts/social.html" %}
-{% load humanize %}
 {% block title %}Your feed{% endblock %}
+{% block page_title %}Home{% endblock %}
 {% block content %}
-<div class="mx-auto max-w-2xl">
-  <form method="post" enctype="multipart/form-data" class="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-    {% csrf_token %}
-    {% include "components/form.html" %}
-    <div class="text-right"><button type="submit" class="btn btn-primary">Post</button></div>
-  </form>
+{% include "posts/_composer.html" %}
 
-  <h1 class="mt-8 mb-4 text-xl font-bold">Your feed</h1>
-  <div class="space-y-4">
-    {% for item in feed_items %}
-      {% include "posts/_feed_item.html" %}
-    {% empty %}
-      <div class="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
-        <p class="font-medium text-slate-700">Your feed is empty.</p>
-        <p class="mt-1 text-sm">Write your first post above, or follow people to see theirs.</p>
-      </div>
-    {% endfor %}
-  </div>
-  {% include "posts/_pagination.html" %}
+<h1 class="mb-4 mt-8 text-lg font-bold tracking-tight">Your feed</h1>
+<div class="space-y-4">
+  {% for item in feed_items %}
+    {% include "posts/_feed_item.html" %}
+  {% empty %}
+    {% url 'posts:people' as people_url %}
+    {% include "components/empty_state.html" with title="Your feed is empty." text="Write your first post above, or follow people to see theirs here." icon="home" action_label="Find people" action_href=people_url only %}
+  {% endfor %}
 </div>
+{% include "components/pagination.html" %}
 {% endblock %}

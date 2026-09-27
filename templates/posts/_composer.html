@@ -1,0 +1,23 @@
+{# New-post composer. Expects `form` (PostForm). Anchored as #compose (mobile "Post" tab). #}
+<form id="compose" method="post" enctype="multipart/form-data" class="card scroll-mt-24 p-4 sm:p-5">
+  {% csrf_token %}
+  {% if form.non_field_errors %}<div class="mb-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-800">{% for e in form.non_field_errors %}<p>{{ e }}</p>{% endfor %}</div>{% endif %}
+  <div class="flex gap-3">
+    {% include "components/avatar.html" with user=user only %}
+    <div class="min-w-0 flex-1">
+      <div class="field{% if form.body.errors %} field-invalid{% endif %} [&_textarea]:resize-none [&_textarea]:px-0 [&_textarea]:pt-2 [&_textarea]:text-base [&_textarea]:shadow-none [&_textarea]:ring-0 [&_textarea]:focus:ring-0">
+        <label for="{{ form.body.id_for_label }}" class="sr-only">What's up?</label>
+        {{ form.body }}
+        {% for error in form.body.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+      </div>
+      <div class="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-sage-300/50 pt-3">
+        <div class="field{% if form.image.errors %} field-invalid{% endif %} min-w-0 basis-full sm:basis-auto sm:flex-1 [&_input]:text-xs">
+          <label for="{{ form.image.id_for_label }}" class="sr-only">Add an image (optional)</label>
+          <div class="flex items-center gap-2 text-sage-700">{% include "components/icon.html" with name="photo" cls="h-5 w-5 text-brand-500" only %}{{ form.image }}</div>
+          {% for error in form.image.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+        </div>
+        {% include "components/button.html" with label="Post" icon="send" extra="ml-auto" only %}
+      </div>
+    </div>
+  </div>
+</form>

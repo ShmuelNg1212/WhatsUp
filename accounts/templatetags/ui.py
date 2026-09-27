@@ -32,3 +32,12 @@ def initials(user):
     name = getattr(user, "username", "") or "?"
     parts = [p for p in re.split(r"[\W_]+|(?<=[a-z])(?=[A-Z])", name) if p]
     return "".join(p[0] for p in parts[:2]).upper() or name[0].upper()
+
+
+@register.filter
+def domain(url):
+    """'https://www.acme.example/sale?x=1' → 'acme.example' (for display only)."""
+    from urllib.parse import urlsplit
+
+    host = urlsplit(str(url)).hostname or ""
+    return host.removeprefix("www.")

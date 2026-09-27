@@ -1,0 +1,8 @@
+{# Newer/Older pager. Expects `page_obj`. #}
+{% if page_obj.has_other_pages %}
+<nav class="mt-8 flex items-center justify-between gap-3 text-sm" aria-label="Pagination">
+  {% if page_obj.has_previous %}<a class="btn btn-secondary btn-sm" href="?page={{ page_obj.previous_page_number }}">{% include "components/icon.html" with name="chevron-left" cls="h-4 w-4" only %} Newer</a>{% else %}<span></span>{% endif %}
+  <span class="text-sage-700">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+  {% if page_obj.has_next %}<a class="btn btn-secondary btn-sm" href="?page={{ page_obj.next_page_number }}">Older {% include "components/icon.html" with name="chevron-right" cls="h-4 w-4" only %}</a>{% else %}<span></span>{% endif %}
+</nav>
+{% endif %}

@@ -1,8 +1,7 @@
 {% extends "layouts/social.html" %}
 {% block title %}Post by {{ post.author.username }}{% endblock %}
+{% block page_title %}Post{% endblock %}
 {% block content %}
-<div class="mx-auto max-w-2xl">
-  <a href="{% url 'posts:feed' %}" class="text-sm text-indigo-600 hover:underline">← Back to feed</a>
-  <div class="mt-4">{% include "posts/_post_card.html" %}</div>
-</div>
+<a href="{% url 'posts:feed' %}" class="btn btn-ghost btn-sm -ml-3 mb-4">{% include "components/icon.html" with name="chevron-left" cls="h-4 w-4" only %} Back to feed</a>
+{% include "posts/_post_card.html" %}
 {% endblock %}
