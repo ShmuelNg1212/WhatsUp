@@ -32,6 +32,7 @@
   - `collectstatic`: 130 files, 390 post-processed, manifest + 260 gzip variants.
   - gunicorn booted 2 workers on `0.0.0.0:$PORT`. HTTP → 301 to HTTPS. HTTPS pages 200. Admin CSS served by WhiteNoise with gzip and `max-age=315360000, immutable`. HSTS header present. Unknown host → 400.
   - (zsh doesn't word-split variables; the first probe attempts were re-run under bash.)
+- **Caught before handover:** Render runs `sh build.sh` under dash, which older versions reject on `set -o pipefail`. With errexit that would have failed the first deploy. `build.sh` is now POSIX `sh`, tested with `sh -n`, `bash --posix -n`, and a no-bash-isms check → `fix(build): keep build.sh POSIX so Render's sh (dash) can run it`.
 - Local `runserver` still works with **no** environment (SQLite, local media).
 - **Not yet verified:** `migrate` on real Postgres (no local Postgres). This happens on the first Render deploy against Neon, or beforehand via `TEST_DATABASE_URL` (see Rendezvous).
 
