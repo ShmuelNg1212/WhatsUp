@@ -1,7 +1,7 @@
 # Plan: Initial Setup (Phase 1: Foundation)
 - **Date:** 2026-09-27 17:15
 - **Study:** [../study/2026-09-27-1715-project-initialization.md](../study/2026-09-27-1715-project-initialization.md)
-- **Status:** awaiting-rendezvous
+- **Status:** done
 
 ## Tasks
 - [x] 1. Create `.venv` from Homebrew Python 3.14, pin `Django==6.1.1` in `requirements.txt`, run `django-admin startproject config .` → `build: bootstrap django 6.1 project`
