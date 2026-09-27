@@ -1,30 +1,41 @@
 {% extends "layouts/social.html" %}
-{% block title %}{{ profile_user.username }}{% endblock %}
+{% block title %}{% firstof profile_user.get_full_name profile_user.username %} (@{{ profile_user.username }}){% endblock %}
+{% block page_title %}@{{ profile_user.username }}{% endblock %}
 {% block content %}
-<div class="mx-auto max-w-2xl">
-  <section class="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-    <div>
-      <h1 class="text-2xl font-bold">{{ profile_user.username }}</h1>
-      <p class="mt-2 flex gap-4 text-sm text-slate-600">
-        <span><strong class="text-slate-900" data-testid="post-count">{{ page_obj.paginator.count }}</strong> post{{ page_obj.paginator.count|pluralize }}</span>
-        <span><strong class="text-slate-900" data-testid="follower-count">{{ profile_user.follower_count }}</strong> follower{{ profile_user.follower_count|pluralize }}</span>
-        <span><strong class="text-slate-900" data-testid="following-count">{{ profile_user.following_count }}</strong> following</span>
-      </p>
+<section class="card overflow-hidden">
+  <div class="h-28 bg-gradient-to-br from-brand-200 via-violet-100 to-sage-200 sm:h-36" aria-hidden="true"></div>
+  <div class="px-5 pb-6 sm:px-6">
+    <div class="-mt-12 flex items-end justify-between gap-4">
+      {% include "components/avatar.html" with user=profile_user size="xl" only %}
+      <div class="pb-1">
+        {% if is_self %}
+          {% include "components/badge.html" with label="This is you" tone="sage" only %}
+        {% else %}
+          {% include "components/follow_button.html" with target=profile_user following=is_following testid="profile-follow-button" size="md" %}
+        {% endif %}
+      </div>
     </div>
-    {% if is_self %}
-      <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">This is you</span>
-    {% else %}
-      {% include "posts/_follow_button.html" with target=profile_user following=is_following testid="profile-follow-button" %}
-    {% endif %}
-  </section>
-
-  <div class="mt-6 space-y-4">
-    {% for post in posts %}
-      {% include "posts/_post_card.html" %}
-    {% empty %}
-      <p class="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">No posts yet.</p>
-    {% endfor %}
+    <h1 class="mt-4 text-2xl font-bold tracking-tight">{% firstof profile_user.get_full_name profile_user.username %}</h1>
+    <p class="text-sm text-sage-700">@{{ profile_user.username }} · Joined {{ profile_user.date_joined|date:"F Y" }}</p>
+    <dl class="mt-5 flex gap-6 text-sm">
+      <div><dt class="sr-only">Posts</dt><dd><strong class="text-base text-sage-900" data-testid="post-count">{{ page_obj.paginator.count }}</strong> <span class="text-sage-700">post{{ page_obj.paginator.count|pluralize }}</span></dd></div>
+      <div><dt class="sr-only">Followers</dt><dd><strong class="text-base text-sage-900" data-testid="follower-count">{{ profile_user.follower_count }}</strong> <span class="text-sage-700">follower{{ profile_user.follower_count|pluralize }}</span></dd></div>
+      <div><dt class="sr-only">Following</dt><dd><strong class="text-base text-sage-900" data-testid="following-count">{{ profile_user.following_count }}</strong> <span class="text-sage-700">following</span></dd></div>
+    </dl>
   </div>
-  {% include "components/pagination.html" %}
+  <div class="border-t border-sage-300/50 px-5 sm:px-6"><span class="-mb-px inline-block border-b-2 border-brand-600 py-3 text-sm font-semibold">Posts</span></div>
+</section>
+
+<div class="mt-6 space-y-4">
+  {% for post in posts %}
+    {% include "posts/_post_card.html" %}
+  {% empty %}
+    {% if is_self %}
+      {% url 'posts:feed' as feed_url %}{% include "components/empty_state.html" with title="No posts yet." text="Share your first post from the feed." icon="pencil" action_label="Write a post" action_href=feed_url|add:"#compose" only %}
+    {% else %}
+      {% include "components/empty_state.html" with title="No posts yet." text="When they post, it'll show up here." icon="pencil" only %}
+    {% endif %}
+  {% endfor %}
 </div>
+{% include "components/pagination.html" %}
 {% endblock %}
