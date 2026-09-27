@@ -7,7 +7,21 @@ See doc/wiki/architecture.md for the layout.
 
 from pathlib import Path
 
+import dj_database_url
+import environ
+
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+# Configuration comes from the environment (12-factor). A local, gitignored .env
+# file is read if present; real environment variables always win.
+env = environ.Env()
+if (BASE_DIR / ".env").is_file():
+    environ.Env.read_env(BASE_DIR / ".env")
+
+# Safe shared defaults; dev/test/prod override (prod makes these mandatory).
+DEBUG = env.bool("DEBUG", default=False)
+SECRET_KEY = env.str("SECRET_KEY", default="")
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[])
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -25,6 +39,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # must stay directly after SecurityMiddleware
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -52,11 +67,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
+# DATABASE_URL (e.g. Neon Postgres) if set; otherwise the local SQLite file.
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
+    "default": dj_database_url.config(default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}"),
 }
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -74,9 +87,15 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-# User uploads (post images). Served by Django only when DEBUG=True; see config/urls.py.
+# User uploads (post and ad images). Locally they live in media/ and are served by
+# runserver only when DEBUG=True (config/urls.py). Production stores them on Cloudinary (prod.py).
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
 
 AUTH_USER_MODEL = "accounts.User"
 LOGIN_URL = "login"
