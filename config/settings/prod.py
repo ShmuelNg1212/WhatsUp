@@ -33,3 +33,20 @@ CSRF_COOKIE_SECURE = True
 SECURE_HSTS_SECONDS = 60 * 60 * 24 * 30
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
+# HSTS preload is deliberately off: submitting a domain to the browser preload
+# list is hard to undo, so it is a Gardener decision once a domain exists.
+
+# Nothing sends email yet. SMTP credentials are an exogenous input needed
+# before password reset / notifications ship (see doc/wiki/external-dependencies.md).
+MAILERS = {
+    "default": {
+        "BACKEND": "django.core.mail.backends.smtp.EmailBackend",
+        "OPTIONS": {
+            "host": os.environ.get("DJANGO_EMAIL_HOST", "localhost"),
+            "port": int(os.environ.get("DJANGO_EMAIL_PORT", "587")),
+            "username": os.environ.get("DJANGO_EMAIL_HOST_USER", ""),
+            "password": os.environ.get("DJANGO_EMAIL_HOST_PASSWORD", ""),
+            "use_tls": True,
+        },
+    },
+}
