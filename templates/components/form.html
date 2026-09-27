@@ -1,0 +1,13 @@
+{% comment %}
+  Renders a whole form's fields (not the <form> tag or the submit button).
+  Expects `form`. Non-field errors on top, hidden fields, then each visible field.
+{% endcomment %}
+{% if form.non_field_errors %}
+  <div class="mb-5 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800 ring-1 ring-inset ring-red-200" role="alert">
+    {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+  </div>
+{% endif %}
+{% for field in form.hidden_fields %}{{ field }}{% endfor %}
+<div class="space-y-5">
+  {% for field in form.visible_fields %}{% include "components/form_field.html" %}{% endfor %}
+</div>

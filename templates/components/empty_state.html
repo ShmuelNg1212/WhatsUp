@@ -4,9 +4,9 @@
 {% endcomment %}
 <div class="rounded-2xl border border-dashed border-sage-400 bg-white/60 px-6 py-12 text-center" {% if testid %}data-testid="{{ testid }}"{% endif %}>
   <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-sage-100 text-sage-700">
-    {% include "components/icon.html" with name=icon|default:"sparkles" cls="h-6 w-6" %}
+    {% include "components/icon.html" with name=icon|default:"sparkles" cls="h-6 w-6" only %}
   </div>
   <p class="font-semibold text-sage-900">{{ title }}</p>
   {% if text %}<p class="mx-auto mt-1 max-w-sm text-sm text-sage-700">{{ text }}</p>{% endif %}
-  {% if action_href %}<div class="mt-5">{% include "components/button.html" with label=action_label href=action_href icon="plus" variant="primary" size="" full=False extra="" testid="" %}</div>{% endif %}
+  {% if action_href %}<div class="mt-5">{% include "components/button.html" with label=action_label href=action_href icon="plus" variant="primary" only %}</div>{% endif %}
 </div>
