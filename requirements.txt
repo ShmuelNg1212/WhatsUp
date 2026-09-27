@@ -1,2 +1,18 @@
+# Direct dependencies, pinned. Transitive ones are resolved by pip (`pip check` must stay clean).
+
+# Framework
 Django==6.1.1
-Pillow==12.3.0
+Pillow==12.3.0                     # ImageField (post and ad images)
+
+# Production server & static files
+gunicorn==26.2.0                   # Render start command: gunicorn config.wsgi:application
+whitenoise==6.12.0                 # serves collected static files (admin CSS/JS)
+
+# Configuration & database
+django-environ==0.14.0             # SECRET_KEY, DEBUG, ALLOWED_HOSTS, ... from the environment / .env
+dj-database-url==3.1.2             # DATABASE_URL → DATABASES (SQLite fallback locally)
+psycopg2-binary==2.9.13            # Postgres driver (Neon)
+
+# Media storage (production only; see config/settings/prod.py)
+cloudinary==1.46.2
+django-cloudinary-storage==0.3.0   # unmaintained since 2020: keep OUT of INSTALLED_APPS (see doc/wiki/deployment.md)
