@@ -3,7 +3,7 @@ from django.urls import reverse
 
 from accounts.models import Follow
 from accounts.tests.helpers import make_advertiser, make_regular
-from posts.forms import MAX_IMAGE_BYTES
+from core.validators import MAX_IMAGE_BYTES
 from posts.models import Comment, Like, Post
 from posts.views import POSTS_PER_PAGE
 
@@ -137,7 +137,7 @@ class PostCreateTests(TempMediaMixin, TestCase):
     def test_oversized_image_rejected(self):
         from unittest import mock
 
-        with mock.patch("posts.forms.MAX_IMAGE_BYTES", 10):
+        with mock.patch("core.validators.MAX_IMAGE_BYTES", 10):
             response = self.client.post(FEED, {"body": "Hi", "image": make_image()})
         self.assertIn("image", response.context["form"].errors)
         self.assertFalse(Post.objects.exists())

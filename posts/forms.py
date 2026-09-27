@@ -1,9 +1,8 @@
 from django import forms
-from django.template.defaultfilters import filesizeformat
+
+from core.validators import validate_image_size
 
 from .models import Comment, Post
-
-MAX_IMAGE_BYTES = 5 * 1024 * 1024
 
 
 class PostForm(forms.ModelForm):
@@ -18,11 +17,7 @@ class PostForm(forms.ModelForm):
 
     def clean_image(self):
         image = self.cleaned_data.get("image")
-        if image and image.size > MAX_IMAGE_BYTES:
-            raise forms.ValidationError(
-                f"Images must be {filesizeformat(MAX_IMAGE_BYTES)} or smaller "
-                f"(this one is {filesizeformat(image.size)})."
-            )
+        validate_image_size(image)
         return image
 
 
