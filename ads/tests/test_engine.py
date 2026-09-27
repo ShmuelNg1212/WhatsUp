@@ -128,5 +128,6 @@ class RecordImpressionsTests(TestCase):
         self.assertEqual(AdImpression.objects.filter(ad_unit=unit, user=alice).count(), 3)
 
     def test_nothing_to_record(self):
+        alice = make_regular("alice")
         with self.assertNumQueries(0):
-            record_impressions(make_regular("alice"), [])
+            record_impressions(alice, [])
