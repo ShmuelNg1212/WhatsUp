@@ -1,25 +1,70 @@
 {% extends "base.html" %}
+{% load humanize %}
 {% block title %}Advertiser dashboard{% endblock %}
 {% block content %}
-<h1 class="text-2xl font-bold">Advertiser dashboard</h1>
-{% if profile %}
-  <dl class="mt-6 grid gap-4 rounded-2xl border border-slate-200 bg-white p-6 sm:grid-cols-2">
-    <div>
-      <dt class="text-sm text-slate-500">Company</dt>
-      <dd class="font-medium">{{ profile.company_name }}</dd>
-    </div>
-    <div>
-      <dt class="text-sm text-slate-500">Website</dt>
-      <dd class="font-medium">{% if profile.website %}<a href="{{ profile.website }}" class="text-indigo-600 hover:underline" rel="noopener">{{ profile.website }}</a>{% else %}—{% endif %}</dd>
-    </div>
-  </dl>
-{% else %}
+<div class="flex flex-wrap items-center justify-between gap-4">
+  <div>
+    <h1 class="text-2xl font-bold">Advertiser dashboard</h1>
+    {% if profile %}
+      <p class="mt-1 text-sm text-slate-600">
+        {{ profile.company_name }}{% if profile.website %} · <a href="{{ profile.website }}" class="text-indigo-600 hover:underline" rel="noopener">{{ profile.website }}</a>{% endif %}
+      </p>
+    {% endif %}
+  </div>
+  <a href="{% url 'ads:campaign_create' %}" class="btn btn-primary">+ New campaign</a>
+</div>
+
+{% if not profile %}
   <p class="mt-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
     Your account has no company profile yet. Contact support to finish setting it up.
   </p>
 {% endif %}
-<div class="mt-6 rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
-  <p class="font-medium text-slate-700">No campaigns yet.</p>
-  <p class="mt-1 text-sm">Campaigns and sponsored posts are coming soon.</p>
-</div>
+
+<dl class="mt-6 grid gap-4 sm:grid-cols-3">
+  <div class="rounded-2xl border border-slate-200 bg-white p-5">
+    <dt class="text-sm text-slate-500">Campaigns</dt>
+    <dd class="mt-1 text-2xl font-bold" data-testid="campaign-count">{{ campaigns|length }}</dd>
+  </div>
+  <div class="rounded-2xl border border-slate-200 bg-white p-5">
+    <dt class="text-sm text-slate-500">Live now</dt>
+    <dd class="mt-1 text-2xl font-bold" data-testid="live-count">{{ live_count }}</dd>
+  </div>
+  <div class="rounded-2xl border border-slate-200 bg-white p-5">
+    <dt class="text-sm text-slate-500">Total budget</dt>
+    <dd class="mt-1 text-2xl font-bold" data-testid="total-budget">${{ total_budget|floatformat:2|intcomma }}</dd>
+  </div>
+</dl>
+
+<h2 class="mt-10 mb-3 text-lg font-semibold">Your campaigns</h2>
+{% if campaigns %}
+  <div class="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+    <table class="w-full text-left text-sm">
+      <thead class="border-b border-slate-200 bg-slate-50 text-slate-600">
+        <tr>
+          <th class="px-4 py-3 font-medium">Name</th>
+          <th class="px-4 py-3 font-medium">Status</th>
+          <th class="px-4 py-3 font-medium">Dates</th>
+          <th class="px-4 py-3 text-right font-medium">Budget</th>
+          <th class="px-4 py-3 text-right font-medium">Ads</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for campaign in campaigns %}
+          <tr>
+            <td class="px-4 py-3"><a href="{{ campaign.get_absolute_url }}" class="font-medium text-indigo-600 hover:underline">{{ campaign.name }}</a></td>
+            <td class="px-4 py-3">{% include "ads/_state_badge.html" %}</td>
+            <td class="px-4 py-3 text-slate-600">{{ campaign.start_date|date:"M j, Y" }} – {{ campaign.end_date|date:"M j, Y" }}</td>
+            <td class="px-4 py-3 text-right">${{ campaign.budget|floatformat:2|intcomma }}</td>
+            <td class="px-4 py-3 text-right">{{ campaign.ad_count }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <div class="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
+    <p class="font-medium text-slate-700">No campaigns yet.</p>
+    <p class="mt-1 text-sm">Create your first campaign to start building ads.</p>
+  </div>
+{% endif %}
 {% endblock %}

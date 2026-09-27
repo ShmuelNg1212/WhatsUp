@@ -2,7 +2,8 @@
 The role-gating matrix: every protected area against every kind of visitor.
 
 /feed/  is protected with RoleRequiredMixin (class-based view)
-/ads/   is protected with @role_required     (function view)
+/ads/   is protected with ads.mixins.AdvertiserRequiredMixin (class-based view)
+(@role_required is covered directly in test_permissions.py)
 """
 
 from django.test import TestCase
