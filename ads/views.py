@@ -3,8 +3,13 @@ from django.db.models import Count
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DeleteView, DetailView, TemplateView, UpdateView
 
-from .forms import CampaignForm
-from .mixins import AdvertiserRequiredMixin, OwnedCampaignMixin, campaigns_owned_by
+from .forms import AdUnitForm, CampaignForm
+from .mixins import (
+    AdvertiserRequiredMixin,
+    OwnedAdUnitMixin,
+    OwnedCampaignMixin,
+    campaigns_owned_by,
+)
 from .models import Campaign
 
 
@@ -43,11 +48,20 @@ class CampaignCreateView(AdvertiserRequiredMixin, CampaignFormMixin, CreateView)
         return super().form_valid(form)
 
 
+def sponsor_name(user):
+    profile = getattr(user, "advertiser_profile", None)
+    return profile.company_name if profile else user.username
+
+
 class CampaignDetailView(OwnedCampaignMixin, DetailView):
     template_name = "ads/campaign_detail.html"
 
     def get_context_data(self, **kwargs):
-        return super().get_context_data(ad_units=list(self.object.ad_units.all()), **kwargs)
+        return super().get_context_data(
+            ad_units=list(self.object.ad_units.all()),
+            sponsor=sponsor_name(self.request.user),
+            **kwargs,
+        )
 
 
 class CampaignUpdateView(OwnedCampaignMixin, CampaignFormMixin, UpdateView):
@@ -63,3 +77,27 @@ class CampaignDeleteView(OwnedCampaignMixin, SuccessMessageMixin, DeleteView):
 
     def get_success_message(self, cleaned_data):
         return f"Campaign “{self.object.name}” deleted."
+
+
+class AdUnitFormMixin(SuccessMessageMixin):
+    form_class = AdUnitForm
+    template_name = "ads/adunit_form.html"
+
+
+class AdUnitCreateView(OwnedAdUnitMixin, AdUnitFormMixin, CreateView):
+    success_message = "Ad “%(headline)s” created."
+
+    def form_valid(self, form):
+        form.instance.campaign = self.campaign
+        return super().form_valid(form)
+
+
+class AdUnitUpdateView(OwnedAdUnitMixin, AdUnitFormMixin, UpdateView):
+    success_message = "Ad “%(headline)s” updated."
+
+
+class AdUnitDeleteView(OwnedAdUnitMixin, SuccessMessageMixin, DeleteView):
+    template_name = "ads/adunit_confirm_delete.html"
+
+    def get_success_message(self, cleaned_data):
+        return f"Ad “{self.object.headline}” deleted."

@@ -50,8 +50,21 @@ class OwnedAdUnitMixin(AdvertiserRequiredMixin):
     def campaign(self):
         return get_object_or_404(campaigns_owned_by(self.request.user), pk=self.kwargs["campaign_pk"])
 
+    # Resolve the parent before any form processing, so a foreign campaign
+    # returns 404 before uploads are validated or anything is written.
+    def get(self, request, *args, **kwargs):
+        self.campaign  # noqa: B018
+        return super().get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        self.campaign  # noqa: B018
+        return super().post(request, *args, **kwargs)
+
     def get_queryset(self):
         return AdUnit.objects.filter(campaign=self.campaign)
+
+    def get_success_url(self):
+        return self.campaign.get_absolute_url()
 
     def get_context_data(self, **kwargs):
         kwargs.setdefault("campaign", self.campaign)

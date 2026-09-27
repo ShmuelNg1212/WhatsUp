@@ -10,4 +10,19 @@ urlpatterns = [
     path("campaigns/<int:pk>/", views.CampaignDetailView.as_view(), name="campaign_detail"),
     path("campaigns/<int:pk>/edit/", views.CampaignUpdateView.as_view(), name="campaign_update"),
     path("campaigns/<int:pk>/delete/", views.CampaignDeleteView.as_view(), name="campaign_delete"),
+    path(
+        "campaigns/<int:campaign_pk>/units/new/",
+        views.AdUnitCreateView.as_view(),
+        name="adunit_create",
+    ),
+    path(
+        "campaigns/<int:campaign_pk>/units/<int:pk>/edit/",
+        views.AdUnitUpdateView.as_view(),
+        name="adunit_update",
+    ),
+    path(
+        "campaigns/<int:campaign_pk>/units/<int:pk>/delete/",
+        views.AdUnitDeleteView.as_view(),
+        name="adunit_delete",
+    ),
 ]
