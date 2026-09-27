@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.validators import MaxLengthValidator
 from django.db import models
 from django.urls import reverse
 
@@ -10,7 +11,9 @@ class Post(models.Model):
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="posts"
     )
-    body = models.TextField(max_length=POST_MAX_LENGTH)
+    body = models.TextField(
+        max_length=POST_MAX_LENGTH, validators=[MaxLengthValidator(POST_MAX_LENGTH)]
+    )
     image = models.ImageField(upload_to="posts/%Y/%m/", blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -61,7 +64,9 @@ class Comment(models.Model):
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="comments"
     )
-    body = models.TextField(max_length=COMMENT_MAX_LENGTH)
+    body = models.TextField(
+        max_length=COMMENT_MAX_LENGTH, validators=[MaxLengthValidator(COMMENT_MAX_LENGTH)]
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
