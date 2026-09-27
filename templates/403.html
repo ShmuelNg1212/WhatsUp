@@ -1,10 +1,12 @@
-{% extends "base.html" %}
+{% extends "layouts/public.html" %}
 {% block title %}Access denied{% endblock %}
+{% block container_class %}max-w-lg{% endblock %}
 {% block content %}
-<section class="py-12 text-center">
-  <p class="text-sm font-semibold text-red-600">403</p>
-  <h1 class="mt-2 text-3xl font-bold">You can't access this page</h1>
-  <p class="mt-4 text-slate-600">This area is for a different account type.</p>
-  <a href="{% url 'home' %}" class="btn btn-primary mt-6">Go to your home</a>
-</section>
+<div class="card mt-10 p-10 text-center">
+  <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">{% include "components/icon.html" with name="shield" cls="h-7 w-7" only %}</div>
+  <p class="eyebrow mt-6">Error 403</p>
+  <h1 class="mt-2 text-2xl font-bold tracking-tight">You can't access this page</h1>
+  <p class="mt-2 text-sage-700">This area is for a different account type.</p>
+  <div class="mt-8">{% url 'home' as home_url %}{% include "components/button.html" with label="Go to your home" href=home_url icon="home" only %}</div>
+</div>
 {% endblock %}

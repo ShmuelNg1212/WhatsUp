@@ -1,17 +1,18 @@
-{% extends "base.html" %}
+{% extends "layouts/public.html" %}
 {% block title %}Log in{% endblock %}
+{% block container_class %}max-w-md{% endblock %}
 {% block content %}
-<div class="mx-auto max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-  <h1 class="mb-6 text-2xl font-bold">Log in</h1>
-  <form method="post" class="space-y-6">
+<div class="card mt-6 p-8 sm:p-10">
+  <h1 class="text-2xl font-bold tracking-tight">Welcome back</h1>
+  <p class="mt-1 text-sm text-sage-700">Log in to see what's up.</p>
+  <form method="post" class="mt-8 space-y-6">
     {% csrf_token %}
     {% include "components/form.html" %}
     <input type="hidden" name="next" value="{{ next }}">
-    <button type="submit" class="btn btn-primary w-full">Log in</button>
+    {% include "components/button.html" with label="Log in" full=True only %}
   </form>
-  <p class="mt-6 text-center text-sm text-slate-600">
-    New here? <a href="{% url 'signup' %}" class="font-medium text-indigo-600 hover:underline">Sign up</a>
-    or <a href="{% url 'signup_advertiser' %}" class="font-medium text-indigo-600 hover:underline">advertise with us</a>.
-  </p>
 </div>
+<p class="mt-6 text-center text-sm text-sage-700">
+  New here? <a href="{% url 'signup' %}" class="link">Create an account</a> or <a href="{% url 'signup_advertiser' %}" class="link">advertise with us</a>.
+</p>
 {% endblock %}
