@@ -16,7 +16,7 @@ from .utils import TempMediaMixin, add_comment, add_like, make_image, make_post
 
 # session + user + paginator COUNT + posts (author, counts, liked_by_me joined in) + comment previews
 # + eligible-ad lookup (runs because the page has >= 4 posts; no ads exist in this test).
-# The with-ads cases are pinned in ads/tests/test_feed_injection.py.
+# The with-ads cases are pinned in ads/tests/test_feed_queries.py.
 FEED_QUERIES = 6
 # session + user + profile user (with counts) + paginator COUNT + posts + comment previews + is_following
 PROFILE_QUERIES = 7
