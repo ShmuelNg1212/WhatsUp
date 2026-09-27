@@ -1,0 +1,12 @@
+{% extends layout %}{# layout chosen by the ui|error_layout filter in the wrapper #}
+{% block title %}Not found{% endblock %}
+{% block container_class %}max-w-lg{% endblock %}{% block page_title %}{% endblock %}
+{% block content %}
+<div class="card mt-10 p-10 text-center">
+  <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-sage-100 text-sage-700">{% include "components/icon.html" with name="search" cls="h-7 w-7" only %}</div>
+  <p class="eyebrow mt-6">Error 404</p>
+  <h1 class="mt-2 text-2xl font-bold tracking-tight">We couldn't find that</h1>
+  <p class="mt-2 text-sage-700">The page may have moved, or it isn't yours to see.</p>
+  <div class="mt-8">{% url 'home' as home_url %}{% include "components/button.html" with label="Back home" href=home_url icon="home" only %}</div>
+</div>
+{% endblock %}

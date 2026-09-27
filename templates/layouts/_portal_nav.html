@@ -1,0 +1,11 @@
+{# Portal navigation links, shared by the sidebar and the mobile menu. Expects `view`. #}
+<nav class="mt-2 space-y-1">
+  <a href="{% url 'ads:dashboard' %}" class="nav-link{% if view == 'ads:dashboard' %} nav-link-active{% endif %}" {% if view == 'ads:dashboard' %}aria-current="page"{% endif %}>
+    {% include "components/icon.html" with name="squares" only %} Dashboard</a>
+  <a href="{% url 'ads:campaign_create' %}" class="nav-link{% if view == 'ads:campaign_create' %} nav-link-active{% endif %}" {% if view == 'ads:campaign_create' %}aria-current="page"{% endif %}>
+    {% include "components/icon.html" with name="plus" only %} New campaign</a>
+  {% if campaign.pk %}
+    <a href="{{ campaign.get_absolute_url }}" class="nav-link{% if view != 'ads:dashboard' and view != 'ads:campaign_create' %} nav-link-active{% endif %}">
+      {% include "components/icon.html" with name="megaphone" only %}<span class="truncate">{{ campaign.name }}</span></a>
+  {% endif %}
+</nav>

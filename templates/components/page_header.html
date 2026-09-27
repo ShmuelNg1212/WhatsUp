@@ -1,0 +1,9 @@
+{% comment %}
+  Page heading for app pages. title (required); subtitle; back_href + back_label for a breadcrumb.
+  Put action buttons next to it with the layout's page_actions block.
+{% endcomment %}
+<div>
+  {% if back_href %}<a href="{{ back_href }}" class="mb-2 inline-flex items-center gap-1 text-sm font-medium text-sage-700 hover:text-sage-900">{% include "components/icon.html" with name="chevron-left" cls="h-4 w-4" only %} {{ back_label|default:"Back" }}</a>{% endif %}
+  <h1 class="text-2xl font-bold tracking-tight text-sage-900">{{ title }}</h1>
+  {% if subtitle %}<p class="mt-1 text-sm text-sage-700">{{ subtitle }}</p>{% endif %}
+</div>

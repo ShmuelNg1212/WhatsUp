@@ -41,3 +41,14 @@ def domain(url):
 
     host = urlsplit(str(url)).hostname or ""
     return host.removeprefix("www.")
+
+
+@register.filter
+def error_layout(user):
+    """Which layout an error page (403/404) should use for this viewer."""
+    if getattr(user, "is_authenticated", False):
+        if getattr(user, "is_advertiser", False):
+            return "layouts/portal.html"
+        if getattr(user, "is_regular_user", False):
+            return "layouts/social.html"
+    return "layouts/public.html"
