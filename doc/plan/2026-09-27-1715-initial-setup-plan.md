@@ -1,21 +1,27 @@
 # Plan: Initial Setup (Phase 1: Foundation)
 - **Date:** 2026-09-27 17:15
 - **Study:** [../study/2026-09-27-1715-project-initialization.md](../study/2026-09-27-1715-project-initialization.md)
-- **Status:** in-progress
+- **Status:** awaiting-rendezvous
 
 ## Tasks
-- [ ] 1. Create `.venv` from Homebrew Python 3.14, pin `Django==6.1.1` in `requirements.txt`, run `django-admin startproject config .` → `build: bootstrap django 6.1 project`
-- [ ] 2. Split settings into `config/settings/{base,dev,test,prod}.py`; `manage.py` defaults to `dev`; `prod` requires `DJANGO_SECRET_KEY` + `DJANGO_ALLOWED_HOSTS`; add `.env.example` → `build: split settings by environment`
-- [ ] 3. Create `accounts` app: `User(AbstractUser)` with `Role` TextChoices, unique case-insensitive email, role CheckConstraint, role helpers; set `AUTH_USER_MODEL`; generate the **first** migration; register in admin → `feat(accounts): add custom user model with regular and advertiser roles`
-- [ ] 4. Model tests for User: default role, role helpers, invalid role rejected by DB, case-insensitive email uniqueness, superuser creation → `test(accounts): cover user model constraints`
-- [ ] 5. Create `ads` app: `AdvertiserProfile` (OneToOne → User) with `clean()` enforcing advertiser-only; admin inline; migration → `feat(ads): add advertiser profile model`
-- [ ] 6. Tests for AdvertiserProfile: one per user, rejects regular users, cascade delete → `test(ads): cover advertiser profile constraints`
-- [ ] 7. Role gating: `accounts/permissions.py` with `RoleRequiredMixin` + `role_required` (anon → login redirect, wrong role → 403) → `feat(accounts): add role-based view protection`
-- [ ] 8. Base templates: `templates/base.html` (Tailwind CDN, nav showing auth state/role), landing page, 403 page → `feat: add base layout and landing page`
-- [ ] 9. Auth flows: built-in login/logout, regular signup and advertiser signup (atomic user+profile), `home` role router, templates → `feat(accounts): add signup, login, logout and role-based home routing`
-- [ ] 10. Gated placeholder areas: `posts` app `/feed/` (REGULAR_USER only), `ads` `/ads/` dashboard (ADVERTISER only) → `feat: add role-gated feed and advertiser dashboard`
-- [ ] 11. Tests: signup flows (role assignment, profile creation, atomicity, validation), login/logout, home routing, gating matrix (anon/regular/advertiser × feed/ads) for both mixin and decorator → `test: cover authentication flows and role gating`
-- [ ] 12. Verify: `manage.py check`, `check --deploy --settings=config.settings.prod` (sanity), `makemigrations --check`, full test suite green, dev server smoke test via HTTP → fix commits as needed
+- [x] 1. Create `.venv` from Homebrew Python 3.14, pin `Django==6.1.1` in `requirements.txt`, run `django-admin startproject config .` → `build: bootstrap django 6.1 project`
+- [x] 2. Split settings into `config/settings/{base,dev,test,prod}.py`. `manage.py` defaults to `dev` (`test` for the `test` command). `wsgi`/`asgi` default to `prod`. `prod` requires `DJANGO_SECRET_KEY` + `DJANGO_ALLOWED_HOSTS`. Add `.env.example` → `build: split settings by environment`
+- [x] 3. Create `accounts` app: `User(AbstractUser)` with `Role` TextChoices, unique case-insensitive email, role CheckConstraint, role helpers. Set `AUTH_USER_MODEL`. Generate the **first** migration. Register in admin → `feat(accounts): add custom user model with regular and advertiser roles`
+  - _Deviation:_ empty `posts`/`ads` app skeletons committed first as `chore: scaffold posts and ads apps`.
+- [x] 4. Model tests for User → `test(accounts): cover user model constraints`
+- [x] 5. Create `ads` app: `AdvertiserProfile` (OneToOne → User) with `clean()` enforcing advertiser-only. Admin. Migration → `feat(ads): add advertiser profile model`
+  - _Deviation:_ standalone admin instead of an inline on the User admin, so `accounts` stays independent of `ads` in the admin.
+- [x] 6. Tests for AdvertiserProfile → `test(ads): cover advertiser profile constraints`
+- [x] 7. Role gating: `accounts/permissions.py` with `RoleRequiredMixin` + `role_required` → `feat(accounts): add role-based view protection`
+- [x] 8. Base templates: `base.html` (Tailwind CDN), landing page, 403 page → `feat: add base layout and landing page`
+- [x] 9. Auth flows: built-in login/logout, regular + advertiser signup (atomic user+profile) → `feat(accounts): add signup, login and logout flows`
+- [x] 10. Gated areas: `/feed/` (REGULAR_USER, mixin), `/ads/` (ADVERTISER, decorator), plus the `home` role router (moved here from task 9 because it needs these routes) → `feat: add role-gated feed and advertiser dashboard with home routing`
+- [x] 11. Tests: signup, login/logout, home routing, gating matrix, helper unit tests → `test: cover authentication flows and role gating`
+- [x] 12. Verify:
+  - `check` clean. `makemigrations --check`: no changes. Fresh `migrate` OK.
+  - `check --deploy` (prod) flagged the dev mail backend → `fix(settings): use smtp mail backend in production`. The only remaining warning is HSTS preload, which is off on purpose.
+  - 65/65 tests pass. A deliberate break of the feed gate made the gating tests fail, as it should.
+  - Live dev-server HTTP smoke test: anonymous visitors are redirected, advertiser signup → dashboard, advertiser → `/feed/` = 403.
 
 ## Blocked On
 Nothing.
