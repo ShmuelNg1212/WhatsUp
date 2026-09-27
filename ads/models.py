@@ -41,6 +41,15 @@ class AdvertiserProfile(models.Model):
             )
 
 
+class CampaignQuerySet(models.QuerySet):
+    def live(self, today=None):
+        """Campaigns eligible to serve today. Must agree with `Campaign.is_live`."""
+        today = today or timezone.localdate()
+        return self.filter(
+            status=Campaign.Status.ACTIVE, start_date__lte=today, end_date__gte=today
+        )
+
+
 class Campaign(models.Model):
     """
     A budgeted advertising campaign owned by exactly one advertiser.
@@ -80,8 +89,15 @@ class Campaign(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    objects = CampaignQuerySet.as_manager()
+
     class Meta:
         ordering = ["-created_at", "-id"]
+        indexes = [
+            models.Index(
+                fields=["status", "start_date", "end_date"], name="ads_campaign_serving_idx"
+            ),
+        ]
         constraints = [
             models.UniqueConstraint(
                 fields=["advertiser", "name"],
@@ -135,6 +151,17 @@ AD_HEADLINE_MAX_LENGTH = 90
 AD_BODY_MAX_LENGTH = 300
 
 
+class AdUnitQuerySet(models.QuerySet):
+    def servable(self, today=None):
+        """Ad units whose campaign is live today (see `CampaignQuerySet.live`)."""
+        today = today or timezone.localdate()
+        return self.filter(
+            campaign__status=Campaign.Status.ACTIVE,
+            campaign__start_date__lte=today,
+            campaign__end_date__gte=today,
+        )
+
+
 class AdUnit(models.Model):
     """
     One advertisement inside a campaign. Its owner is always derived from
@@ -158,6 +185,8 @@ class AdUnit(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    objects = AdUnitQuerySet.as_manager()
+
     class Meta:
         ordering = ["created_at", "id"]
         constraints = [
@@ -180,3 +209,11 @@ class AdUnit(models.Model):
     @property
     def advertiser(self):
         return self.campaign.advertiser
+
+    @property
+    def sponsor_name(self):
+        """Company name, or the username if the advertiser has no profile.
+        Load with select_related("campaign__advertiser__advertiser_profile") to avoid queries."""
+        advertiser = self.campaign.advertiser
+        profile = getattr(advertiser, "advertiser_profile", None)
+        return profile.company_name if profile else advertiser.username
