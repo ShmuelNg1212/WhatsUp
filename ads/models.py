@@ -217,3 +217,59 @@ class AdUnit(models.Model):
         advertiser = self.campaign.advertiser
         profile = getattr(advertiser, "advertiser_profile", None)
         return profile.company_name if profile else advertiser.username
+
+
+class AdEvent(models.Model):
+    """
+    Append-only telemetry about an ad unit. Rows are never edited.
+
+    The user is kept as SET_NULL so advertiser statistics don't change when a
+    viewer deletes their account.
+    """
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        abstract = True
+        ordering = ["-created_at", "-id"]
+
+    def __str__(self):
+        return f"{self.__class__.__name__} ad={self.ad_unit_id} user={self.user_id} at {self.created_at:%Y-%m-%d %H:%M}"
+
+
+class AdImpression(AdEvent):
+    """An ad unit was served (rendered) to a user in their feed."""
+
+    ad_unit = models.ForeignKey(AdUnit, on_delete=models.CASCADE, related_name="impressions")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="ad_impressions",
+    )
+
+    class Meta(AdEvent.Meta):
+        indexes = [
+            models.Index(fields=["ad_unit", "created_at"], name="ads_impression_ad_time_idx"),
+            models.Index(fields=["user", "created_at"], name="ads_impression_user_time_idx"),
+        ]
+
+
+class AdClick(AdEvent):
+    """A user clicked an ad unit (recorded by the click router before redirecting)."""
+
+    ad_unit = models.ForeignKey(AdUnit, on_delete=models.CASCADE, related_name="clicks")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="ad_clicks",
+    )
+
+    class Meta(AdEvent.Meta):
+        indexes = [
+            models.Index(fields=["ad_unit", "created_at"], name="ads_click_ad_time_idx"),
+            models.Index(fields=["user", "created_at"], name="ads_click_user_time_idx"),
+        ]

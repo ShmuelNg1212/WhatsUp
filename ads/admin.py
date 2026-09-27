@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import AdUnit, AdvertiserProfile, Campaign
+from .models import AdClick, AdImpression, AdUnit, AdvertiserProfile, Campaign
 
 
 @admin.register(AdvertiserProfile)
@@ -31,3 +31,36 @@ class AdUnitAdmin(admin.ModelAdmin):
     list_select_related = ("campaign",)
     search_fields = ("headline", "campaign__name")
     raw_id_fields = ("campaign",)
+
+
+class ReadOnlyTelemetryAdmin(admin.ModelAdmin):
+    """Telemetry is append-only: visible in the admin, never editable."""
+
+    list_display = ("created_at", "ad_unit", "campaign", "user")
+    list_filter = ("created_at",)
+    list_select_related = ("ad_unit__campaign", "user")
+    search_fields = ("ad_unit__headline", "ad_unit__campaign__name", "user__username")
+    date_hierarchy = "created_at"
+
+    @admin.display(description="Campaign", ordering="ad_unit__campaign__name")
+    def campaign(self, obj):
+        return obj.ad_unit.campaign
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(AdImpression)
+class AdImpressionAdmin(ReadOnlyTelemetryAdmin):
+    pass
+
+
+@admin.register(AdClick)
+class AdClickAdmin(ReadOnlyTelemetryAdmin):
+    pass
