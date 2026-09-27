@@ -8,6 +8,6 @@
 | Tailwind CSS v4 browser CDN (jsDelivr) | Styling | Verified; **dev only** | `templates/base.html` |
 | `DJANGO_SECRET_KEY`, `DJANGO_ALLOWED_HOSTS` | Production | Needed at deploy | env vars (see `.env.example`) |
 | SMTP provider credentials | Email (nothing sends email yet) | Needed later | `DJANGO_EMAIL_*` env vars, `config/settings/prod.py` |
-| Payment processor (e.g. Stripe) | Buying ad units | Needed later | — |
+| Payment processor (e.g. Stripe) | Charging campaign budgets (budgets are stored only, as USD) | Needed before real ad spend | — |
 | Hosting target and domain | Production | Needed later | — |
-| Production media storage (S3/GCS/R2 or a web server) | Serving uploaded post images when `DEBUG=False` | Needed before deploy | `MEDIA_*` settings / `STORAGES` |
+| Production media storage (S3/GCS/R2 or a web server) | Serving uploaded post and ad images when `DEBUG=False` | Needed before deploy | `MEDIA_*` settings / `STORAGES` |

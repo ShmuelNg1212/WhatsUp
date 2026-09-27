@@ -6,13 +6,14 @@
                         │ follower ──►  User  ◄── following│   (asymmetric, many-to-many with itself)
                         └─────────────────────────────────┘
 User 1 ──── 0..1 AdvertiserProfile      (only when role = ADVERTISER)
+User 1 ──── *    Campaign 1 ──── * AdUnit   (advertiser; ad unit owner = campaign.advertiser)
 User 1 ──── *    Post                   (author)
 User 1 ──── *    Like    * ──── 1 Post  (unique per user+post)
 User 1 ──── *    Comment * ──── 1 Post
 ```
-Every foreign key uses **CASCADE**. Deleting a user removes their profile, follows (in both directions), posts, likes, and comments. Deleting a post removes its likes and comments, but **not** its image file.
+Every foreign key uses **CASCADE**. Deleting a user removes their profile, follows (in both directions), posts, likes, comments, and campaigns. Deleting a post removes its likes and comments. Deleting a campaign removes its ad units. Image files are **not** deleted from disk.
 
-Only `REGULAR_USER`s take part in the social models. Views enforce this through role gating, and `Follow.clean()` enforces it for follows.
+Only `REGULAR_USER`s take part in the social models. Views enforce this through role gating, and `Follow.clean()` enforces it for follows. Only `ADVERTISER`s own campaigns, enforced by portal gating, `Campaign.clean()`, and `limit_choices_to` in the admin.
 
 ---
 
@@ -58,6 +59,45 @@ Why an explicit through model instead of a plain M2M: it gives us `created_at`, 
 | `created_at` | DateTimeField | Set automatically |
 
 Invariant: only `ADVERTISER` users have a profile. It is enforced by `clean()` and by atomic advertiser signup; the database can't enforce a rule across two tables.
+
+## `ads.Campaign`
+A budgeted campaign owned by exactly one advertiser.
+
+| Field | Type | Notes |
+|---|---|---|
+| `advertiser` | FK → User | `related_name="campaigns"`, `limit_choices_to={"role": "ADVERTISER"}`. Set by the portal from `request.user`, never from a form. |
+| `name` | CharField(120) | Unique per advertiser |
+| `budget` | DecimalField(12, 2) | "Total budget (USD)". ≥ 0.01. **Stored only**: no money is charged yet. |
+| `start_date`, `end_date` | DateField | end ≥ start |
+| `status` | CharField(10) | `Campaign.Status`: `ACTIVE` / `INACTIVE` (default **INACTIVE**) |
+| `created_at`, `updated_at` | DateTimeField | Set automatically |
+
+Default ordering: `-created_at, -id`. `get_absolute_url()` → `/ads/campaigns/<pk>/`.
+
+Constraints:
+- `ads_campaign_unique_name_per_advertiser`: UNIQUE (advertiser, name). The form also checks this **case-insensitively**.
+- `ads_campaign_budget_positive`: CHECK budget > 0.
+- `ads_campaign_end_after_start`: CHECK end_date ≥ start_date.
+- `ads_campaign_status_valid`: CHECK status IN ('ACTIVE', 'INACTIVE').
+- `clean()`: the owner must have role `ADVERTISER`.
+
+Derived (not stored): `state`, one of `live` / `scheduled` / `ended` / `inactive` (`Campaign.State`), and `is_live` (ACTIVE and start ≤ today ≤ end, in the server's time zone, UTC). Dashboard annotation: `ad_count`.
+
+## `ads.AdUnit`
+One advertisement in a campaign. Its owner is **derived** (`ad_unit.advertiser` → `campaign.advertiser`) and never stored separately, so the two can't drift apart.
+
+| Field | Type | Notes |
+|---|---|---|
+| `campaign` | FK → Campaign | `related_name="ad_units"`. Set by the portal from the URL after the ownership check. |
+| `headline` | CharField(90) | Required |
+| `body` | TextField | "Body text". Required, max **300** characters (model validator). |
+| `image` | ImageField | Optional. Stored at `ads/%Y/%m/`. Max 5 MB (form check). |
+| `target_url` | URLField(500) | Required. **http/https only** (`URLValidator(schemes=["http", "https"])`). The form adds `https://` when no scheme is given. |
+| `created_at`, `updated_at` | DateTimeField | Set automatically |
+
+Default ordering: `created_at, id`.
+- `ads_adunit_headline_not_empty`, `ads_adunit_body_not_empty`: CHECK ≠ ''.
+- `ads_adunit_campaign_time_idx`: INDEX (campaign, created_at).
 
 ## `posts.Post`
 | Field | Type | Notes |
@@ -105,5 +145,7 @@ Default ordering: `created_at, id` (oldest first, reading order).
 | accounts | `0001_initial` | User |
 | accounts | `0002_follow_user_following_and_more` | Follow, `User.following`, follow constraints and index |
 | ads | `0001_initial` | AdvertiserProfile |
+| ads | `0002_campaign` | Campaign, with constraints |
+| ads | `0003_adunit` | AdUnit, with constraints and index |
 | posts | `0001_initial` | Post, Like, Comment, with constraints and indexes |
 | posts | `0002_enforce_body_max_length` | Max-length validators on `body` fields |
