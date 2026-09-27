@@ -1,7 +1,14 @@
 from django.contrib.messages.views import SuccessMessageMixin
 from django.db.models import Count
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
+from django.utils.decorators import method_decorator
+from django.views import View
+from django.views.decorators.cache import never_cache
 from django.views.generic import CreateView, DeleteView, DetailView, TemplateView, UpdateView
+
+from accounts.models import User
+from accounts.permissions import RoleRequiredMixin
 
 from .forms import AdUnitForm, CampaignForm
 from .mixins import (
@@ -10,7 +17,7 @@ from .mixins import (
     OwnedCampaignMixin,
     campaigns_owned_by,
 )
-from .models import Campaign
+from .models import AdClick, AdUnit, Campaign
 
 
 class DashboardView(AdvertiserRequiredMixin, TemplateView):
@@ -101,3 +108,24 @@ class AdUnitDeleteView(OwnedAdUnitMixin, SuccessMessageMixin, DeleteView):
 
     def get_success_message(self, cleaned_data):
         return f"Ad “{self.object.headline}” deleted."
+
+
+@method_decorator(never_cache, name="dispatch")
+class AdClickView(RoleRequiredMixin, View):
+    """
+    Click router for ads shown in the feed: record an AdClick, then 302 to the target.
+
+    Only regular users (the people who see feed ads) generate clicks. Advertisers
+    get 403, so they can't inflate numbers, and portal previews link directly.
+    The destination is always the stored, validated target_url and is never
+    taken from the request, so this is not an open redirect. HEAD returns 405,
+    so link checkers don't record clicks.
+    """
+
+    allowed_roles = (User.Role.REGULAR_USER,)
+    http_method_names = ["get"]
+
+    def get(self, request, ad_id):
+        ad = get_object_or_404(AdUnit.objects.only("id", "target_url"), pk=ad_id)
+        AdClick.objects.create(ad_unit=ad, user=request.user)
+        return redirect(ad.target_url)
