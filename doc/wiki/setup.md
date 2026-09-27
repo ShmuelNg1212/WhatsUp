@@ -18,6 +18,10 @@
 | Run tests | `.venv/bin/python manage.py test` |
 | Apply migrations | `.venv/bin/python manage.py migrate` |
 | Admin | http://127.0.0.1:8000/admin/ |
+| Reset a user's password | `.venv/bin/python manage.py changepassword <username>` |
+
+## Uploaded media
+Post images are saved in `media/` (gitignored) and served by the dev server at `/media/…`. Passwords are stored as one-way hashes and cannot be read back; reset them instead.
 
 ## Settings modules
 | Module | Used by | Notes |
