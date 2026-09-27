@@ -1,1 +1,13 @@
-{# Filled in with auth links once accounts routes exist. #}
+{% if user.is_authenticated %}
+  <span class="text-slate-600">
+    {{ user.username }}
+    <span class="ml-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">{{ user.get_role_display }}</span>
+  </span>
+  <form method="post" action="{% url 'logout' %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-secondary py-1">Log out</button>
+  </form>
+{% else %}
+  <a href="{% url 'login' %}" class="btn btn-secondary py-1">Log in</a>
+  <a href="{% url 'signup' %}" class="btn btn-primary py-1">Sign up</a>
+{% endif %}

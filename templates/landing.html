@@ -6,6 +6,9 @@
   <p class="mx-auto mt-4 max-w-xl text-slate-600">
     Share posts, follow friends, and see what's happening — or reach them with sponsored posts as an advertiser.
   </p>
-  {% block landing_actions %}{% endblock %}
+  <div class="mt-8 flex justify-center gap-3">
+    <a href="{% url 'signup' %}" class="btn btn-primary">Join as a user</a>
+    <a href="{% url 'signup_advertiser' %}" class="btn btn-secondary">Advertise on WhatsUp</a>
+  </div>
 </section>
 {% endblock %}
