@@ -64,8 +64,16 @@ class CampaignDetailView(OwnedCampaignMixin, DetailView):
     template_name = "ads/campaign_detail.html"
 
     def get_context_data(self, **kwargs):
+        ad_units = list(
+            self.object.ad_units.annotate(
+                impression_count=Count("impressions", distinct=True),
+                click_count=Count("clicks", distinct=True),
+            )
+        )
+        for ad in ad_units:
+            ad.ctr = (100 * ad.click_count / ad.impression_count) if ad.impression_count else None
         return super().get_context_data(
-            ad_units=list(self.object.ad_units.all()),
+            ad_units=ad_units,
             sponsor=sponsor_name(self.request.user),
             **kwargs,
         )

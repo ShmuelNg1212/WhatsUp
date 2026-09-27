@@ -33,6 +33,11 @@
     {% for ad in ad_units %}
       <div>
         {% include "ads/_ad_card.html" %}
+        <dl class="mt-2 grid grid-cols-3 gap-2 rounded-xl bg-slate-50 px-4 py-2 text-center text-sm" data-testid="ad-stats-{{ ad.pk }}">
+          <div><dt class="text-xs text-slate-500">Impressions</dt><dd class="font-semibold" data-testid="impressions">{{ ad.impression_count }}</dd></div>
+          <div><dt class="text-xs text-slate-500">Clicks</dt><dd class="font-semibold" data-testid="clicks">{{ ad.click_count }}</dd></div>
+          <div><dt class="text-xs text-slate-500">CTR</dt><dd class="font-semibold" data-testid="ctr">{% if ad.ctr is not None %}{{ ad.ctr|floatformat:1 }}%{% else %}—{% endif %}</dd></div>
+        </dl>
         <div class="mt-2 flex items-center justify-between text-sm">
           <span class="truncate text-slate-500" title="{{ ad.target_url }}">→ {{ ad.target_url }}</span>
           <span class="flex shrink-0 gap-3">
