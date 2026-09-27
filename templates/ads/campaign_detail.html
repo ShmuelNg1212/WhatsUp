@@ -1,57 +1,51 @@
 {% extends "layouts/portal.html" %}
 {% load humanize %}
 {% block title %}{{ campaign.name }}{% endblock %}
+{% block page_title %}{{ campaign.name }}{% endblock %}
 {% block content %}
-<a href="{% url 'ads:dashboard' %}" class="text-sm text-indigo-600 hover:underline">← Dashboard</a>
-
-<section class="mt-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-  <div class="flex flex-wrap items-start justify-between gap-4">
-    <div>
-      <h1 class="text-2xl font-bold">{{ campaign.name }}</h1>
-      <div class="mt-2">{% include "ads/_state_badge.html" %}</div>
-    </div>
-    <div class="flex gap-2">
-      <a href="{% url 'ads:campaign_update' campaign.pk %}" class="btn btn-secondary">Edit</a>
-      <a href="{% url 'ads:campaign_delete' campaign.pk %}" class="btn btn-secondary text-red-600">Delete</a>
-    </div>
+{% url 'ads:dashboard' as dash_url %}
+<div class="flex flex-wrap items-end justify-between gap-4">
+  <div>
+    {% include "components/page_header.html" with title=campaign.name back_href=dash_url back_label="Dashboard" only %}
+    <div class="mt-2">{% include "ads/_state_badge.html" %}</div>
   </div>
-  <dl class="mt-6 grid gap-4 text-sm sm:grid-cols-4">
-    <div><dt class="text-slate-500">Total budget</dt><dd class="font-medium">${{ campaign.budget|floatformat:2|intcomma }}</dd></div>
-    <div><dt class="text-slate-500">Start</dt><dd class="font-medium">{{ campaign.start_date|date:"M j, Y" }}</dd></div>
-    <div><dt class="text-slate-500">End</dt><dd class="font-medium">{{ campaign.end_date|date:"M j, Y" }}</dd></div>
-    <div><dt class="text-slate-500">Status setting</dt><dd class="font-medium">{{ campaign.get_status_display }}</dd></div>
-  </dl>
-</section>
-
-<div class="mt-10 mb-3 flex items-center justify-between">
-  <h2 class="text-lg font-semibold">Ad units ({{ ad_units|length }})</h2>
-  <a href="{% url 'ads:adunit_create' campaign.pk %}" class="btn btn-primary">+ New ad unit</a>
+  <div class="flex gap-2">
+    {% url 'ads:campaign_update' campaign.pk as edit_url %}{% include "components/button.html" with label="Edit" href=edit_url variant="secondary" icon="pencil" only %}
+    {% url 'ads:campaign_delete' campaign.pk as delete_url %}{% include "components/button.html" with label="Delete" href=delete_url variant="ghost" icon="trash" extra="text-red-600 hover:bg-red-50 hover:text-red-700" only %}
+  </div>
 </div>
-<p class="mb-4 text-sm text-slate-500">Each ad is previewed exactly as it will appear in people's feeds.</p>
-{% if ad_units %}
-  <div class="grid gap-6 md:grid-cols-2">
-    {% for ad in ad_units %}
-      <div>
-        {% include "ads/_ad_card.html" %}
-        <dl class="mt-2 grid grid-cols-3 gap-2 rounded-xl bg-slate-50 px-4 py-2 text-center text-sm" data-testid="ad-stats-{{ ad.pk }}">
-          <div><dt class="text-xs text-slate-500">Impressions</dt><dd class="font-semibold" data-testid="impressions">{{ ad.impression_count }}</dd></div>
-          <div><dt class="text-xs text-slate-500">Clicks</dt><dd class="font-semibold" data-testid="clicks">{{ ad.click_count }}</dd></div>
-          <div><dt class="text-xs text-slate-500">CTR</dt><dd class="font-semibold" data-testid="ctr">{% if ad.ctr is not None %}{{ ad.ctr|floatformat:1 }}%{% else %}—{% endif %}</dd></div>
-        </dl>
-        <div class="mt-2 flex items-center justify-between text-sm">
-          <span class="truncate text-slate-500" title="{{ ad.target_url }}">→ {{ ad.target_url }}</span>
-          <span class="flex shrink-0 gap-3">
-            <a href="{% url 'ads:adunit_update' campaign.pk ad.pk %}" class="text-indigo-600 hover:underline">Edit</a>
-            <a href="{% url 'ads:adunit_delete' campaign.pk ad.pk %}" class="text-red-600 hover:underline">Delete</a>
-          </span>
+
+<div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+  {% include "components/metric_card.html" with label="Total budget" prefix="$" value=campaign.budget|floatformat:2|intcomma icon="dollar" tone="sky" hint="USD · not charged yet" only %}
+  {% include "components/metric_card.html" with label="Start" value=campaign.start_date|date:"M j, Y" icon="calendar" small=True only %}
+  {% include "components/metric_card.html" with label="End" value=campaign.end_date|date:"M j, Y" icon="calendar" small=True only %}
+  {% include "components/metric_card.html" with label="Status setting" value=campaign.get_status_display icon="sparkles" tone="brand" small=True only %}
+</div>
+
+<section class="mt-10">
+  <div class="mb-1 flex flex-wrap items-center justify-between gap-3">
+    <h2 class="text-lg font-semibold">Ad units ({{ ad_units|length }})</h2>
+    {% url 'ads:adunit_create' campaign.pk as new_ad_url %}{% include "components/button.html" with label="New ad unit" href=new_ad_url icon="plus" only %}
+  </div>
+  <p class="mb-5 text-sm text-sage-700">Each ad is previewed exactly as it appears in people's feeds. Preview links aren't tracked.</p>
+  {% if ad_units %}
+    <div class="grid gap-6 md:grid-cols-2">
+      {% for ad in ad_units %}
+        <div class="space-y-3">
+          {% include "ads/_ad_card.html" %}
+          {% include "ads/_ad_stats.html" %}
+          <div class="flex items-center justify-between gap-3 px-1 text-sm">
+            <span class="truncate text-sage-700" title="{{ ad.target_url }}">→ {{ ad.target_url }}</span>
+            <span class="flex shrink-0 gap-1">
+              <a href="{% url 'ads:adunit_update' campaign.pk ad.pk %}" class="btn btn-ghost btn-sm">{% include "components/icon.html" with name="pencil" cls="h-4 w-4" only %} Edit</a>
+              <a href="{% url 'ads:adunit_delete' campaign.pk ad.pk %}" class="btn btn-ghost btn-sm text-red-600 hover:bg-red-50 hover:text-red-700">{% include "components/icon.html" with name="trash" cls="h-4 w-4" only %} Delete</a>
+            </span>
+          </div>
         </div>
-      </div>
-    {% endfor %}
-  </div>
-{% else %}
-  <div class="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
-    <p class="font-medium text-slate-700">No ad units yet.</p>
-    <p class="mt-1 text-sm">Add a headline, some text, an optional image, and a link.</p>
-  </div>
-{% endif %}
+      {% endfor %}
+    </div>
+  {% else %}
+    {% include "components/empty_state.html" with title="No ad units yet." text="Add a headline, some text, an optional image, and a link." icon="photo" action_label="New ad unit" action_href=new_ad_url only %}
+  {% endif %}
+</section>
 {% endblock %}

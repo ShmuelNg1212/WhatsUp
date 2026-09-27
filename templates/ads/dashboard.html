@@ -1,70 +1,39 @@
 {% extends "layouts/portal.html" %}
 {% load humanize %}
 {% block title %}Advertiser dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
 {% block content %}
-<div class="flex flex-wrap items-center justify-between gap-4">
-  <div>
-    <h1 class="text-2xl font-bold">Advertiser dashboard</h1>
-    {% if profile %}
-      <p class="mt-1 text-sm text-slate-600">
-        {{ profile.company_name }}{% if profile.website %} · <a href="{{ profile.website }}" class="text-indigo-600 hover:underline" rel="noopener">{{ profile.website }}</a>{% endif %}
-      </p>
-    {% endif %}
-  </div>
-  <a href="{% url 'ads:campaign_create' %}" class="btn btn-primary">+ New campaign</a>
+<div class="flex flex-wrap items-end justify-between gap-4">
+  {% if profile %}{% include "components/page_header.html" with title="Campaigns" subtitle=profile.company_name only %}{% else %}{% include "components/page_header.html" with title="Campaigns" only %}{% endif %}
+  {% url 'ads:campaign_create' as new_url %}{% include "components/button.html" with label="New campaign" href=new_url icon="plus" only %}
 </div>
 
 {% if not profile %}
-  <p class="mt-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-    Your account has no company profile yet. Contact support to finish setting it up.
+  <p class="mt-6 flex items-center gap-2 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800 ring-1 ring-inset ring-amber-200">
+    {% include "components/icon.html" with name="exclamation-circle" cls="h-5 w-5" only %} Your account has no company profile yet. Contact support to finish setting it up.
   </p>
 {% endif %}
 
-<dl class="mt-6 grid gap-4 sm:grid-cols-3">
-  <div class="rounded-2xl border border-slate-200 bg-white p-5">
-    <dt class="text-sm text-slate-500">Campaigns</dt>
-    <dd class="mt-1 text-2xl font-bold" data-testid="campaign-count">{{ campaigns|length }}</dd>
-  </div>
-  <div class="rounded-2xl border border-slate-200 bg-white p-5">
-    <dt class="text-sm text-slate-500">Live now</dt>
-    <dd class="mt-1 text-2xl font-bold" data-testid="live-count">{{ live_count }}</dd>
-  </div>
-  <div class="rounded-2xl border border-slate-200 bg-white p-5">
-    <dt class="text-sm text-slate-500">Total budget</dt>
-    <dd class="mt-1 text-2xl font-bold" data-testid="total-budget">${{ total_budget|floatformat:2|intcomma }}</dd>
-  </div>
-</dl>
+<div class="mt-8 grid gap-4 sm:grid-cols-3">
+  {% include "components/metric_card.html" with label="Campaigns" value=campaigns|length icon="megaphone" tone="brand" testid="campaign-count" only %}
+  {% include "components/metric_card.html" with label="Live now" value=live_count icon="chart" tone="sage" testid="live-count" hint="Active and within their dates" only %}
+  {% include "components/metric_card.html" with label="Total budget" prefix="$" value=total_budget|floatformat:2|intcomma icon="dollar" tone="sky" testid="total-budget" hint="USD · not charged yet" only %}
+</div>
 
-<h2 class="mt-10 mb-3 text-lg font-semibold">Your campaigns</h2>
-{% if campaigns %}
-  <div class="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
-    <table class="w-full text-left text-sm">
-      <thead class="border-b border-slate-200 bg-slate-50 text-slate-600">
-        <tr>
-          <th class="px-4 py-3 font-medium">Name</th>
-          <th class="px-4 py-3 font-medium">Status</th>
-          <th class="px-4 py-3 font-medium">Dates</th>
-          <th class="px-4 py-3 text-right font-medium">Budget</th>
-          <th class="px-4 py-3 text-right font-medium">Ads</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-slate-100">
-        {% for campaign in campaigns %}
-          <tr>
-            <td class="px-4 py-3"><a href="{{ campaign.get_absolute_url }}" class="font-medium text-indigo-600 hover:underline">{{ campaign.name }}</a></td>
-            <td class="px-4 py-3">{% include "ads/_state_badge.html" %}</td>
-            <td class="px-4 py-3 text-slate-600">{{ campaign.start_date|date:"M j, Y" }} – {{ campaign.end_date|date:"M j, Y" }}</td>
-            <td class="px-4 py-3 text-right">${{ campaign.budget|floatformat:2|intcomma }}</td>
-            <td class="px-4 py-3 text-right">{{ campaign.ad_count }}</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-{% else %}
-  <div class="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
-    <p class="font-medium text-slate-700">No campaigns yet.</p>
-    <p class="mt-1 text-sm">Create your first campaign to start building ads.</p>
-  </div>
-{% endif %}
+<section class="mt-10">
+  <h2 class="mb-3 text-lg font-semibold">Your campaigns</h2>
+  {% if campaigns %}
+    <div class="card overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="table min-w-[42rem]">
+          <thead><tr><th>Name</th><th>Status</th><th>Dates</th><th class="text-right">Budget</th><th class="text-right">Ads</th><th><span class="sr-only">Open</span></th></tr></thead>
+          <tbody>{% for campaign in campaigns %}{% include "ads/_campaign_row.html" %}{% endfor %}</tbody>
+        </table>
+      </div>
+    </div>
+  {% else %}
+    {% url 'ads:campaign_create' as new_url %}
+    {% include "components/empty_state.html" with title="No campaigns yet." text="Create your first campaign to start building ads." icon="megaphone" action_label="New campaign" action_href=new_url only %}
+  {% endif %}
+</section>
 {% endblock %}

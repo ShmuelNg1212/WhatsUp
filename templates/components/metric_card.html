@@ -1,5 +1,6 @@
 {% comment %}
-  KPI tile. label, value (required); icon; hint (small text under the value); testid (on the value);
+  KPI tile. label, value (required); prefix (e.g. "$"); icon; hint (small text under the value); testid (on the value);
+  small=True for long values such as dates;
   tone: brand | sage (default) | sky | amber — colours the icon chip.
 {% endcomment %}
 <div class="card p-5">
@@ -7,6 +8,6 @@
     <p class="text-sm font-medium text-sage-700">{{ label }}</p>
     {% if icon %}<span class="flex h-9 w-9 items-center justify-center rounded-xl {% if tone == 'brand' %}bg-brand-50 text-brand-600{% elif tone == 'sky' %}bg-sky-50 text-sky-700{% elif tone == 'amber' %}bg-amber-50 text-amber-700{% else %}bg-sage-200 text-sage-800{% endif %}">{% include "components/icon.html" with name=icon cls="h-5 w-5" only %}</span>{% endif %}
   </div>
-  <p class="mt-3 text-3xl font-bold tracking-tight text-sage-900"{% if testid %} data-testid="{{ testid }}"{% endif %}>{{ value }}</p>
+  <p class="mt-3 {% if small %}text-lg{% else %}text-3xl{% endif %} font-bold tracking-tight text-sage-900"{% if testid %} data-testid="{{ testid }}"{% endif %}>{{ prefix }}{{ value }}</p>
   {% if hint %}<p class="mt-1 text-xs text-sage-700">{{ hint }}</p>{% endif %}
 </div>

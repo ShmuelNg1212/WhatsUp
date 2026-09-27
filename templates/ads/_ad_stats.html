@@ -1,0 +1,6 @@
+{# Telemetry strip under an ad preview. Expects `ad` annotated with impression_count, click_count, ctr. #}
+<dl class="grid grid-cols-3 divide-x divide-sage-300/50 rounded-xl bg-white text-center ring-1 ring-inset ring-sage-300/50" data-testid="ad-stats-{{ ad.pk }}">
+  <div class="px-2 py-2.5"><dt class="flex items-center justify-center gap-1 text-[11px] font-medium text-sage-700">{% include "components/icon.html" with name="eye" cls="h-3.5 w-3.5" only %}Impressions</dt><dd class="mt-0.5 font-semibold tabular-nums" data-testid="impressions">{{ ad.impression_count }}</dd></div>
+  <div class="px-2 py-2.5"><dt class="flex items-center justify-center gap-1 text-[11px] font-medium text-sage-700">{% include "components/icon.html" with name="cursor" cls="h-3.5 w-3.5" only %}Clicks</dt><dd class="mt-0.5 font-semibold tabular-nums" data-testid="clicks">{{ ad.click_count }}</dd></div>
+  <div class="px-2 py-2.5"><dt class="flex items-center justify-center gap-1 text-[11px] font-medium text-sage-700">{% include "components/icon.html" with name="chart" cls="h-3.5 w-3.5" only %}CTR</dt><dd class="mt-0.5 font-semibold tabular-nums" data-testid="ctr">{% if ad.ctr is not None %}{{ ad.ctr|floatformat:1 }}%{% else %}—{% endif %}</dd></div>
+</dl>

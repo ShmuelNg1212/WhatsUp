@@ -1,0 +1,11 @@
+{# One row of the campaigns table. Expects `campaign` (annotated with ad_count). #}
+{% load humanize %}
+<tr>
+  <td><a href="{{ campaign.get_absolute_url }}" class="font-semibold text-sage-900 hover:text-brand-700">{{ campaign.name }}</a>
+      <p class="text-xs text-sage-700">Created {{ campaign.created_at|date:"M j, Y" }}</p></td>
+  <td>{% include "ads/_state_badge.html" %}</td>
+  <td class="whitespace-nowrap text-sage-800">{{ campaign.start_date|date:"M j" }} – {{ campaign.end_date|date:"M j, Y" }}</td>
+  <td class="whitespace-nowrap text-right font-medium tabular-nums">${{ campaign.budget|floatformat:2|intcomma }}</td>
+  <td class="text-right tabular-nums">{{ campaign.ad_count }}</td>
+  <td class="text-right"><a href="{{ campaign.get_absolute_url }}" class="btn btn-ghost btn-sm" aria-label="Open {{ campaign.name }}">{% include "components/icon.html" with name="chevron-right" cls="h-4 w-4" only %}</a></td>
+</tr>

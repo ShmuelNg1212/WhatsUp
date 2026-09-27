@@ -1,6 +1,7 @@
-{# Expects `campaign`. #}
+{# Campaign state badge (Live / Scheduled / Ended / Inactive). Expects `campaign`. #}
 {% with state=campaign.state %}
-<span class="rounded-full px-2.5 py-0.5 text-xs font-medium
-  {% if state == 'live' %}bg-emerald-100 text-emerald-800{% elif state == 'scheduled' %}bg-sky-100 text-sky-800{% elif state == 'ended' %}bg-slate-200 text-slate-700{% else %}bg-amber-100 text-amber-800{% endif %}"
-  data-state="{{ state }}">{{ state.label }}</span>
+  {% if state == "live" %}{% include "components/badge.html" with label=state.label state=state tone="green" dot=True only %}
+  {% elif state == "scheduled" %}{% include "components/badge.html" with label=state.label state=state tone="sky" dot=True only %}
+  {% elif state == "ended" %}{% include "components/badge.html" with label=state.label state=state tone="slate" dot=True only %}
+  {% else %}{% include "components/badge.html" with label=state.label state=state tone="amber" dot=True only %}{% endif %}
 {% endwith %}

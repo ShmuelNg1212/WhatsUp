@@ -62,12 +62,11 @@
 
       .input,
       .field input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=hidden]),
-      .field select, .field textarea,
-      .form-stack input:not([type=checkbox]):not([type=file]):not([type=hidden]), .form-stack select, .form-stack textarea {
+      .field select, .field textarea {
         @apply block w-full rounded-xl border-0 bg-white px-3.5 py-2.5 text-sm text-sage-900 shadow-sm outline-none
                ring-1 ring-inset ring-sage-300 placeholder:text-sage-600 transition focus:ring-2 focus:ring-brand-500;
       }
-      .field input[type=file], .form-stack input[type=file] {
+      .field input[type=file] {
         @apply block w-full text-sm text-sage-700 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-sage-100
                file:px-3 file:py-2 file:text-sm file:font-semibold file:text-sage-800 hover:file:bg-sage-200;
       }
@@ -76,11 +75,6 @@
       .field-label { @apply mb-1.5 block text-sm font-medium text-sage-900; }
       .field-help  { @apply mt-1.5 text-xs text-sage-700; }
       .field-error { @apply mt-1.5 text-xs font-medium text-red-600; }
-      /* Legacy form markup (pre-overhaul) */
-      .form-stack p { @apply mb-4; }
-      .form-stack label { @apply mb-1.5 block text-sm font-medium text-sage-900; }
-      .form-stack .helptext { @apply mt-1 block text-xs text-sage-700; }
-      .form-stack .errorlist { @apply mb-1 text-xs font-medium text-red-600; }
 
       .chip { @apply inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-medium text-sage-800 ring-1 ring-inset ring-sage-300; }
 
@@ -99,18 +93,6 @@
   {% block head %}{% endblock %}
 </head>
 <body class="min-h-full bg-sage-50 font-sans text-sage-900 antialiased">
-  {% block body %}
-    {# Fallback shell for pages that don't use a layout yet. #}
-    <header class="border-b border-sage-300/50 bg-white">
-      <nav class="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
-        <a href="{% url 'home' %}" class="text-lg font-bold text-brand-600">WhatsUp</a>
-        <div class="flex items-center gap-3 text-sm">{% block nav %}{% include "partials/nav.html" %}{% endblock %}</div>
-      </nav>
-    </header>
-    <main class="mx-auto max-w-4xl px-4 py-8">
-      {% include "components/messages.html" %}
-      {% block content %}{% endblock %}
-    </main>
-  {% endblock %}
+  {% block body %}{# Filled by layouts/public.html, layouts/social.html, layouts/portal.html #}{% endblock %}
 </body>
 </html>
