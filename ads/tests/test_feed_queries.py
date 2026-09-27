@@ -1,9 +1,10 @@
 """
 Feed query budget with ad injection. It is constant whatever the number of posts, ads, or advertisers.
 
-    5  page has < 4 posts         (no ad slots → ad engine not consulted)
-    6  >= 4 posts, no live ads    (+ eligible-ID lookup)
-    8  >= 4 posts, live ads       (+ ID lookup, + one ad fetch with sponsor joined, + one impression INSERT)
+    7  page has < 4 posts         (no ad slots → ad engine not consulted)
+    8  >= 4 posts, no live ads    (+ eligible-ID lookup)
+    10 >= 4 posts, live ads       (+ ID lookup, + one ad fetch with sponsor joined, + one impression INSERT)
+    (each includes the social layout's 2 right-rail widget queries)
 """
 
 from django.db import connection
@@ -18,9 +19,9 @@ from posts.tests.utils import TempMediaMixin, add_comment, add_like, make_image,
 from .utils import make_ad_unit, make_campaign
 
 FEED = reverse("posts:feed")
-FEED_QUERIES_NO_SLOTS = 5
-FEED_QUERIES_NO_LIVE_ADS = 6
-FEED_QUERIES_WITH_ADS = 8
+FEED_QUERIES_NO_SLOTS = 7
+FEED_QUERIES_NO_LIVE_ADS = 8
+FEED_QUERIES_WITH_ADS = 10
 
 
 class FeedQueryBudgetTests(TempMediaMixin, TestCase):

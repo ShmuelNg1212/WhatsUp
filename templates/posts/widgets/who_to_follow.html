@@ -1,0 +1,20 @@
+<section class="card p-5" aria-labelledby="wtf-title">
+  <h2 id="wtf-title" class="flex items-center gap-2 font-semibold">{% include "components/icon.html" with name="users" cls="h-5 w-5 text-brand-500" only %} Who to follow</h2>
+  {% if suggestions %}
+    <ul class="mt-4 space-y-4">
+      {% for person in suggestions %}
+        <li class="flex items-center gap-3">
+          <a href="{% url 'posts:profile' person.username %}">{% include "components/avatar.html" with user=person only %}</a>
+          <div class="min-w-0 flex-1">
+            <a href="{% url 'posts:profile' person.username %}" class="block truncate text-sm font-semibold hover:underline">{% firstof person.get_full_name person.username %}</a>
+            <p class="truncate text-xs text-sage-700">@{{ person.username }} · {{ person.follower_count }} follower{{ person.follower_count|pluralize }}</p>
+          </div>
+          {% include "posts/_follow_button.html" with target=person following=False size="sm" testid="suggestion-follow-button" %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="mt-3 text-sm text-sage-700">You're following everyone. Nice!</p>
+  {% endif %}
+  <a href="{% url 'posts:people' %}" class="link mt-4 inline-block text-sm">See all people</a>
+</section>

@@ -1,4 +1,7 @@
 """
+Every social page also renders the right-rail widgets (posts/templatetags/social_widgets.py):
++2 constant queries (who_to_follow, trending_posts), included in the numbers below.
+
 N+1 guards: each page must run the same number of queries no matter how much
 content it shows. If one of these tests fails, a template or view has started
 triggering a query per post, like, or comment.
@@ -17,13 +20,13 @@ from .utils import TempMediaMixin, add_comment, add_like, make_image, make_post
 # session + user + paginator COUNT + posts (author, counts, liked_by_me joined in) + comment previews
 # + eligible-ad lookup (runs because the page has >= 4 posts; no ads exist in this test).
 # The with-ads cases are pinned in ads/tests/test_feed_queries.py.
-FEED_QUERIES = 6
+FEED_QUERIES = 8
 # session + user + profile user (with counts) + paginator COUNT + posts + comment previews + is_following
-PROFILE_QUERIES = 7
+PROFILE_QUERIES = 9
 # session + user + post (with counts) + all comments
-DETAIL_QUERIES = 4
+DETAIL_QUERIES = 6
 # session + user + paginator COUNT + people (with counts and followed_by_me)
-PEOPLE_QUERIES = 4
+PEOPLE_QUERIES = 6
 
 
 class QueryCountTests(TempMediaMixin, TestCase):

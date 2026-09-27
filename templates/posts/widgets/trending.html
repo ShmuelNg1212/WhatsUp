@@ -1,0 +1,19 @@
+{% load humanize %}
+<section class="card p-5" aria-labelledby="trending-title">
+  <h2 id="trending-title" class="flex items-center gap-2 font-semibold">{% include "components/icon.html" with name="fire" cls="h-5 w-5 text-brand-500" only %} Trending this week</h2>
+  {% if posts %}
+    <ol class="mt-4 space-y-4">
+      {% for post in posts %}
+        <li>
+          <a href="{{ post.get_absolute_url }}" class="group block">
+            <p class="text-xs text-sage-700">@{{ post.author.username }} · {{ post.created_at|naturaltime }}</p>
+            <p class="mt-0.5 line-clamp-2 text-sm font-medium text-sage-900 group-hover:text-brand-700">{{ post.body }}</p>
+            <p class="mt-1 flex items-center gap-1 text-xs text-sage-700">{% include "components/icon.html" with name="heart" solid=True cls="h-3.5 w-3.5 text-brand-500" only %} {{ post.like_count }}</p>
+          </a>
+        </li>
+      {% endfor %}
+    </ol>
+  {% else %}
+    <p class="mt-3 text-sm text-sage-700">Nothing trending yet. Likes this week will show up here.</p>
+  {% endif %}
+</section>

@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% load social_widgets %}
+{% comment %}
+  Social layout (REGULAR_USER).
+    ≥ xl  : sidebar | main | right rail
+    lg    : sidebar | main
+    < lg  : sticky top bar | main | fixed bottom nav
+  Blocks: page_title (mobile top bar), content, right_rail.
+{% endcomment %}
+{% block body %}
+{% with view=request.resolver_match.view_name %}
+<div class="mx-auto flex max-w-7xl gap-8 lg:px-6">
+
+  {# ── Left sidebar (lg+) ─────────────────────────────── #}
+  <aside class="sticky top-0 hidden h-screen w-60 shrink-0 flex-col py-6 lg:flex" aria-label="Main navigation">
+    <div class="px-3">{% url 'posts:feed' as feed_url %}{% include "components/logo.html" with href=feed_url only %}</div>
+    <nav class="mt-8 space-y-1">
+      <a href="{% url 'posts:feed' %}" class="nav-link{% if view == 'posts:feed' %} nav-link-active{% endif %}" {% if view == 'posts:feed' %}aria-current="page"{% endif %}>
+        {% include "components/icon.html" with name="home" only %} Feed</a>
+      <a href="{% url 'posts:people' %}" class="nav-link{% if view == 'posts:people' %} nav-link-active{% endif %}" {% if view == 'posts:people' %}aria-current="page"{% endif %}>
+        {% include "components/icon.html" with name="users" only %} People</a>
+      <a href="{% url 'posts:profile' user.username %}" class="nav-link{% if view == 'posts:profile' and profile_user.pk == user.pk %} nav-link-active{% endif %}">
+        {% include "components/icon.html" with name="user" only %} My profile</a>
+    </nav>
+    <div class="mt-6 px-1">{% url 'posts:feed' as feed_url %}{% include "components/button.html" with label="New post" href=feed_url|add:"#compose" icon="plus" full=True only %}</div>
+
+    <div class="mt-auto flex items-center gap-3 rounded-2xl p-2">
+      {% include "components/avatar.html" with user=user only %}
+      <div class="min-w-0 flex-1">
+        <p class="truncate text-sm font-semibold">{% firstof user.get_full_name user.username %}</p>
+        <p class="truncate text-xs text-sage-700">@{{ user.username }}</p>
+      </div>
+      <form method="post" action="{% url 'logout' %}">{% csrf_token %}
+        <button type="submit" class="btn btn-ghost p-2" title="Log out" aria-label="Log out">{% include "components/icon.html" with name="logout" only %}</button>
+      </form>
+    </div>
+  </aside>
+
+  {# ── Main column ─────────────────────────────────────── #}
+  <div class="min-w-0 flex-1">
+    <header class="sticky top-0 z-30 flex items-center justify-between border-b border-sage-300/50 bg-sage-50/85 px-4 py-3 backdrop-blur lg:hidden">
+      {% url 'posts:feed' as feed_url %}{% include "components/logo.html" with href=feed_url compact=True only %}
+      <p class="text-sm font-semibold">{% block page_title %}{% endblock %}</p>
+      <details class="relative">
+        <summary class="list-none cursor-pointer rounded-full [&::-webkit-details-marker]:hidden" aria-label="Account menu">{% include "components/avatar.html" with user=user size="sm" only %}</summary>
+        <div class="card absolute right-0 z-40 mt-2 w-56 p-2">
+          <p class="px-3 py-2 text-xs text-sage-700">Signed in as <span class="font-semibold text-sage-900">@{{ user.username }}</span></p>
+          <a href="{% url 'posts:profile' user.username %}" class="nav-link">{% include "components/icon.html" with name="user" only %} My profile</a>
+          <form method="post" action="{% url 'logout' %}">{% csrf_token %}
+            <button type="submit" class="nav-link w-full">{% include "components/icon.html" with name="logout" only %} Log out</button>
+          </form>
+        </div>
+      </details>
+    </header>
+
+    <main class="mx-auto w-full max-w-2xl px-4 pt-6 pb-28 sm:px-6 lg:px-0 lg:pb-12">
+      {% include "components/messages.html" %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  {# ── Right rail (xl+) ────────────────────────────────── #}
+  <aside class="sticky top-0 hidden h-screen w-80 shrink-0 space-y-6 overflow-y-auto py-6 xl:block" aria-label="Suggestions">
+    {% block right_rail %}{% who_to_follow %}{% trending_posts %}{% endblock %}
+  </aside>
+</div>
+
+{# ── Mobile bottom nav (< lg) ─────────────────────────── #}
+<nav class="fixed inset-x-0 bottom-0 z-40 border-t border-sage-300/60 bg-white/90 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden" aria-label="Main navigation">
+  <div class="mx-auto grid max-w-md grid-cols-4 px-2">
+    {% with active="text-brand-600" idle="text-sage-700 hover:text-sage-900" %}
+    <a href="{% url 'posts:feed' %}" class="flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium {% if view == 'posts:feed' %}{{ active }}{% else %}{{ idle }}{% endif %}">{% include "components/icon.html" with name="home" cls="h-6 w-6" only %}Feed</a>
+    <a href="{% url 'posts:people' %}" class="flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium {% if view == 'posts:people' %}{{ active }}{% else %}{{ idle }}{% endif %}">{% include "components/icon.html" with name="users" cls="h-6 w-6" only %}People</a>
+    <a href="{% url 'posts:feed' %}#compose" class="flex flex-col items-center gap-1 py-2 text-[11px] font-medium text-sage-700">
+      <span class="-mt-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-brand-600 text-white shadow-md shadow-brand-600/30">{% include "components/icon.html" with name="plus" cls="h-5 w-5" only %}</span>Post</a>
+    <a href="{% url 'posts:profile' user.username %}" class="flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium {% if view == 'posts:profile' and profile_user.pk == user.pk %}{{ active }}{% else %}{{ idle }}{% endif %}">{% include "components/icon.html" with name="user" cls="h-6 w-6" only %}Profile</a>
+    {% endwith %}
+  </div>
+</nav>
+{% endwith %}
+{% endblock %}
