@@ -7,11 +7,13 @@
                         └─────────────────────────────────┘
 User 1 ──── 0..1 AdvertiserProfile      (only when role = ADVERTISER)
 User 1 ──── *    Campaign 1 ──── * AdUnit   (advertiser; ad unit owner = campaign.advertiser)
+AdUnit 1 ──── * AdImpression * ──── 0..1 User   (viewer; kept as NULL if the viewer is deleted)
+AdUnit 1 ──── * AdClick      * ──── 0..1 User   (clicker; kept as NULL if the clicker is deleted)
 User 1 ──── *    Post                   (author)
 User 1 ──── *    Like    * ──── 1 Post  (unique per user+post)
 User 1 ──── *    Comment * ──── 1 Post
 ```
-Every foreign key uses **CASCADE**. Deleting a user removes their profile, follows (in both directions), posts, likes, comments, and campaigns. Deleting a post removes its likes and comments. Deleting a campaign removes its ad units. Image files are **not** deleted from disk.
+Every foreign key uses **CASCADE**. Deleting a user removes their profile, follows (in both directions), posts, likes, comments, and campaigns. Deleting a post removes its likes and comments. Deleting a campaign removes its ad units, and deleting an ad unit removes its impressions and clicks. **Exception:** telemetry `user` is SET_NULL, so deleting a viewer keeps the advertiser's counts. Image files are **not** deleted from disk.
 
 Only `REGULAR_USER`s take part in the social models. Views enforce this through role gating, and `Follow.clean()` enforces it for follows. Only `ADVERTISER`s own campaigns, enforced by portal gating, `Campaign.clean()`, and `limit_choices_to` in the admin.
 
@@ -83,6 +85,10 @@ Constraints:
 
 Derived (not stored): `state`, one of `live` / `scheduled` / `ended` / `inactive` (`Campaign.State`), and `is_live` (ACTIVE and start ≤ today ≤ end, in the server's time zone, UTC). Dashboard annotation: `ad_count`.
 
+Manager `Campaign.objects` (`CampaignQuerySet`): `.live(today=None)` is the queryset form of `is_live`, and a test keeps the two in step.
+
+Index `ads_campaign_serving_idx`: (status, start_date, end_date), used by ad serving.
+
 ## `ads.AdUnit`
 One advertisement in a campaign. Its owner is **derived** (`ad_unit.advertiser` → `campaign.advertiser`) and never stored separately, so the two can't drift apart.
 
@@ -98,6 +104,28 @@ One advertisement in a campaign. Its owner is **derived** (`ad_unit.advertiser` 
 Default ordering: `created_at, id`.
 - `ads_adunit_headline_not_empty`, `ads_adunit_body_not_empty`: CHECK ≠ ''.
 - `ads_adunit_campaign_time_idx`: INDEX (campaign, created_at).
+
+Manager `AdUnit.objects` (`AdUnitQuerySet`): `.servable(today=None)` returns units whose campaign is live, the **only** source of feed ads.
+
+Helpers: `ad_unit.advertiser` (= `campaign.advertiser`) and `ad_unit.sponsor_name` (company name, or the username). Load with `select_related("campaign__advertiser__advertiser_profile")` for zero queries. Portal annotations (not stored): `impression_count`, `click_count`, `ctr`.
+
+## `ads.AdImpression` and `ads.AdClick` (telemetry)
+The two share an abstract base, `ads.AdEvent`. Rows are **append-only** (read-only in the admin). Ordering: `-created_at, -id`.
+
+| Field | Type | Notes |
+|---|---|---|
+| `ad_unit` | FK → AdUnit, **CASCADE** | Reverse accessors: `ad_unit.impressions` / `ad_unit.clicks` |
+| `user` | FK → User, **SET_NULL**, nullable | The viewer or clicker. Reverse accessors: `user.ad_impressions` / `user.ad_clicks` |
+| `created_at` | DateTimeField | Set automatically |
+
+| Model | Meaning | Written by |
+|---|---|---|
+| `AdImpression` | The ad was **served** (rendered) in this user's feed, once per slot | `ads.engine.record_impressions` from `FeedView`, after a successful render |
+| `AdClick` | The user clicked the ad | `ads.views.AdClickView` (`/ads/click/<id>/`), before the redirect |
+
+Indexes (on each model): `(ad_unit, created_at)` for per-ad stats and time windows, and `(user, created_at)` for future frequency capping. Names: `ads_impression_ad_time_idx`, `ads_impression_user_time_idx`, `ads_click_ad_time_idx`, `ads_click_user_time_idx`.
+
+**Note for billing:** because `ad_unit` is CASCADE, deleting an ad deletes its history. Real billing will need soft-delete or snapshots first.
 
 ## `posts.Post`
 | Field | Type | Notes |
@@ -147,5 +175,7 @@ Default ordering: `created_at, id` (oldest first, reading order).
 | ads | `0001_initial` | AdvertiserProfile |
 | ads | `0002_campaign` | Campaign, with constraints |
 | ads | `0003_adunit` | AdUnit, with constraints and index |
+| ads | `0004_campaign_serving_index` | Campaign serving index |
+| ads | `0005_ad_telemetry` | AdImpression, AdClick, with indexes |
 | posts | `0001_initial` | Post, Like, Comment, with constraints and indexes |
 | posts | `0002_enforce_body_max_length` | Max-length validators on `body` fields |

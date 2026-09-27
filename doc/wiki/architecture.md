@@ -7,7 +7,7 @@
 | Framework | Django 6.1.1 |
 | Image handling | Pillow 12.3.0 (required by `ImageField`) |
 | Database | SQLite (development) |
-| Frontend | Server-rendered Django templates + Tailwind CSS v4 browser CDN (dev only; needs a compiled build before production). No JavaScript: every interaction is an HTML form POST. |
+| Frontend | Server-rendered Django templates + Tailwind CSS v4 browser CDN (dev only; needs a compiled build before production). No JavaScript: every interaction is an HTML form POST or a plain link. Design system: the component classes in `base.html` (`btn`, `btn-primary`, `btn-secondary`, `form-stack`) plus the card style of `posts/_post_card.html`. A "Tailwind UI/UX overhaul" was mentioned in the Slice 4 request but isn't in the repository. |
 | Auth | `django.contrib.auth` with a custom user model |
 | Tests | Django's built-in test runner (`TestCase`) |
 
@@ -60,6 +60,7 @@ Staff and superuser status gives **no** bypass. Admins use `/admin/`.
 | `/u/<username>/` | `posts:profile` | GET | Regular (404 for advertisers or unknown users) |
 | `/u/<username>/follow/` | `posts:follow` | POST (toggle) | Regular |
 | `/ads/` | `ads:dashboard` | GET | Advertiser |
+| `/ads/click/<ad_id>/` | `ads:click` | GET only (HEAD/POST → 405) | **Regular** (advertisers → 403). Records an `AdClick`, then 302 to the ad's `target_url`. Never cached. |
 | `/ads/campaigns/new/` | `ads:campaign_create` | GET/POST | Advertiser |
 | `/ads/campaigns/<pk>/` | `ads:campaign_detail` | GET | Advertiser, **owner only** |
 | `/ads/campaigns/<pk>/edit/` | `ads:campaign_update` | GET/POST | Advertiser, owner only |
@@ -84,18 +85,62 @@ Social toggle and create endpoints reject GET with 405. Portal delete routes use
 | `posts_by(author, viewer)` | `/u/<username>/` | Same, filtered to one author |
 | `oldest_first_previews(posts)` | feed, profile | Flips the newest-first comment previews into reading order |
 
-**Queries per page are fixed, whatever the amount of content.** `posts/tests/test_queries.py` locks these numbers:
+**Queries per page are fixed, whatever the amount of content.** `posts/tests/test_queries.py` and `ads/tests/test_feed_queries.py` lock these numbers:
 
 | Page | Queries | Breakdown |
 |---|---|---|
-| Feed | 5 | session, user, paginator count, posts (with authors, counts, liked_by_me), comment previews |
+| Feed | 5 / 6 / 8 | 5 base (session, user, paginator count, posts with authors, counts and liked_by_me, comment previews). +1 eligible-ad lookup when the page has ≥ 4 posts. +1 ad fetch and +1 impression INSERT when live ads exist. See [Feed ad injection](#feed-ad-injection). |
 | Profile | 7 | session, user, profile user (with follow counts), paginator count, posts, comment previews, is-following check |
 | Post detail | 4 | session, user, post, all comments |
 | People | 4 | session, user, paginator count, people (with counts and followed_by_me) |
 
 If any of these tests fails, a template or view has started running a query per item. Fix the query builder; don't change the expected numbers.
 
-**Scaling notes:** `COUNT DISTINCT` over two joins is fine at this scale. The next steps would be subquery counts, then cached counters, then fan-out on write. The query builder isolates this, so views and templates won't change. Sponsored ads (next slice) will be merged into the feed at the view layer, rendered with `ads/_ad_card.html`.
+**Scaling notes:** `COUNT DISTINCT` over two joins is fine at this scale. The next steps would be subquery counts, then cached counters, then fan-out on write. The query builder isolates this, so views and templates won't change.
+
+## Feed ad injection
+Only the main feed (`/feed/`) carries ads. Profiles and post pages are purely organic.
+
+### Algorithm (per feed page) in `ads/engine.py`
+```
+posts  = page of organic posts (feed_for, 20 per page)              2 queries (+3 fixed)
+slots  = ad_slots(len(posts))        = len(posts) // 4             no queries
+ads    = select_feed_ads(slots)                                      0 / 1 / 2 queries
+items  = blend(posts, ads)           → [FeedItem]                   pure Python
+render feed.html with feed_items
+record_impressions(user, ads shown)  → 1 bulk INSERT                after a successful render
+```
+
+| Piece | Behavior |
+|---|---|
+| `FEED_AD_INTERVAL = 4` | One ad directly **after every 4th organic post**: positions 5, 10, 15, … in the blended list. A full page has 20 posts + 5 ads. **Fewer than 4 posts → no ads, and the ad engine isn't consulted.** |
+| `blend(posts, ads, every=4)` | Pure function. Returns a list of `FeedItem(kind="post"\|"ad", object)` with `is_post`/`is_ad` flags. Posts keep their order. If there are fewer ads than slots, the missing slots are left out. Extra ads are ignored. |
+| `select_feed_ads(count, rng=None, today=None)` | 1) `AdUnit.objects.servable(today).values_list("id")` → 2) `rng.sample(...)` in Python → 3) **one** `in_bulk` fetch with `select_related("campaign__advertiser__advertiser_profile")`, so sponsor names cost no queries. Distinct ads come first, then the selection **cycles** if there are fewer servable ads than slots (one live ad fills every slot). Uniform random choice, with no targeting or budget weighting. |
+| Eligibility (`servable`) | Campaign `status = ACTIVE` and `start_date ≤ today ≤ end_date` (server time zone, UTC). Matches `Campaign.is_live`, and a test enforces that. Served by the index `ads_campaign_serving_idx`. |
+| `record_impressions(user, ads)` | One `AdImpression` per rendered ad slot (a repeated ad counts once per slot), in one INSERT. |
+
+**Why this design:** posts and ads come from two bounded queries merged in Python, so the tuned organic query is untouched and the query count is fixed. A SQL `UNION` or a per-slot template lookup (N+1) were rejected. The details and alternatives are in the [Slice 4 study](../study/2026-09-27-1804-ad-engine-injection.md).
+
+**Scaling notes:** the eligible-ID list grows with the number of live ads. At tens of thousands of ads, cache it briefly or sample in SQL (only `select_feed_ads` changes). Impression writes happen on every feed load; at scale, batch them or send them to a queue.
+
+### Rendering
+- `FeedView.render_feed()` passes `feed_items` (and `posts`, for compatibility) to `posts/feed.html`.
+- `posts/_feed_item.html` dispatches on `item.is_ad` → `ads/_ad_card.html` with `tracked=True`, or on `item.is_post` → `posts/_post_card.html`.
+- `ads/_ad_card.html` matches the post card's layout, with a light indigo border and a **★ SPONSORED** pill (`data-testid="sponsored-tag"`, `aria-label="Sponsored content from …"`). The headline, image, and "Learn more ↗" button all link to the same place:
+  - `tracked=True` (feed) → `/ads/click/<id>/`
+  - not tracked (portal preview) → `target_url` directly, **so previews never generate telemetry**
+
+## Telemetry pipeline
+| Event | Recorded by | When | Who |
+|---|---|---|---|
+| `AdImpression` | `FeedView` via `record_impressions` | **After** the feed renders successfully: GET requests and invalid-post re-renders. **Not HEAD**, and nothing if rendering fails. | The viewing regular user |
+| `AdClick` | `AdClickView` (`/ads/click/<id>/`) | On each GET, **before** the 302 | The clicking regular user |
+
+Definitions and guarantees:
+- **Served impressions, recorded on the server.** Counts ads sent in a rendered page, not ads scrolled into view. Refreshing counts again. There's no de-duplication or frequency cap yet; the `(user, created_at)` index is ready for that. Clients can't fabricate impressions because there's no impression endpoint.
+- **Clicks** go through the router. It looks the ad up by ID (any ad, even if the campaign has since ended; an unknown ID → 404), records the click, then redirects to the **stored, validated** `target_url` (http/https only), so it is not an open redirect. The response is `never_cache`. Anonymous visitors → login. **Advertisers → 403**, so they can't inflate clicks. HEAD and POST → 405.
+- Telemetry is **append-only**. The admin pages for Ad impressions and Ad clicks are read-only (no add, change, or delete).
+- **Reporting:** the campaign detail page annotates each ad unit with `impression_count`, `click_count` (`COUNT DISTINCT`, in the same query), and `ctr` (clicks ÷ impressions × 100, or "—" with no impressions). The page is still 5 queries.
 
 ## Advertiser portal
 
@@ -139,13 +184,13 @@ All are Django generic views, with success messages from `SuccessMessageMixin`.
 | `ended` | ACTIVE and today > end_date |
 
 ### Ad preview
-`templates/ads/_ad_card.html` renders an ad as a native feed card with the sponsor name (`AdvertiserProfile.company_name`, or the username if there's no profile), a **Sponsored** label, headline, body, optional image, and a "Learn more" link (`target="_blank" rel="sponsored noopener noreferrer"`). The portal uses it for previews, and the feed will use the **same partial**, so the preview matches what users will see.
+`templates/ads/_ad_card.html` is the **same partial the feed uses**, so previews are exactly what users see. In the portal it's rendered untracked: links go straight to `target_url` and nothing is recorded. The sponsor name is `AdUnit.sponsor_name` (`AdvertiserProfile.company_name`, or the username if there's no profile). Links use `target="_blank" rel="sponsored noopener noreferrer"`. Under each preview the campaign page shows **Impressions / Clicks / CTR**.
 
 ### Query counts (locked by `ads/tests/test_queries.py`)
 | Page | Queries |
 |---|---|
 | Dashboard | 4 (session, user, profile, campaigns with ad counts) |
-| Campaign detail | 5 (session, user, campaign, ad units, profile) |
+| Campaign detail | 5 (session, user, campaign, ad units with impression and click counts, profile) |
 
 ## Media uploads
 - `MEDIA_ROOT = BASE_DIR / "media"`, `MEDIA_URL = "/media/"`. Post images go to `media/posts/YYYY/MM/`. Ad images go to `media/ads/YYYY/MM/`.
@@ -168,7 +213,8 @@ All are Django generic views, with success messages from `SuccessMessageMixin`.
 | `posts/_follow_button.html` | Follow/Unfollow form (expects `target`, `following`) |
 | `posts/_pagination.html` | Newer/Older links for any `page_obj` |
 | `posts/feed.html`, `detail.html`, `profile.html`, `people.html` | Social pages |
-| `ads/_ad_card.html` | Sponsored ad card (portal preview now, feed later) |
+| `ads/_ad_card.html` | Sponsored ad card: feed (`tracked=True`, links via the click router) and portal preview (direct links) |
+| `posts/_feed_item.html` | Dispatches one `FeedItem` to the post card or the ad card |
 | `ads/_state_badge.html` | Live / Scheduled / Ended / Inactive badge |
 | `ads/dashboard.html`, `campaign_form.html`, `campaign_detail.html`, `campaign_confirm_delete.html`, `adunit_form.html`, `adunit_confirm_delete.html` | Advertiser portal |
 | `403.html`, `landing.html`, `registration/login.html`, `accounts/signup.html` | Other pages |
