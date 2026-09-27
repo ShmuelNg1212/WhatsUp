@@ -7,6 +7,7 @@ from django.views import View
 
 from accounts.models import Follow, User
 from accounts.permissions import RoleRequiredMixin
+from ads.engine import ad_slots, blend, record_impressions, select_feed_ads
 
 from .forms import CommentForm, PostForm
 from .models import Like, Post
@@ -26,7 +27,12 @@ def paginate_posts(request, queryset):
 
 
 class FeedView(RegularUserRequiredMixin, View):
-    """The organic feed (GET) and new-post submission (POST)."""
+    """
+    The feed (GET) and new-post submission (POST).
+
+    Organic posts with one sponsored ad after every 4th post (ads.engine).
+    Served impressions are recorded after the page renders successfully.
+    """
 
     template_name = "posts/feed.html"
 
@@ -45,11 +51,15 @@ class FeedView(RegularUserRequiredMixin, View):
 
     def render_feed(self, form):
         page, posts = paginate_posts(self.request, feed_for(self.request.user))
-        return render(
+        feed_items = blend(posts, select_feed_ads(ad_slots(len(posts))))
+        response = render(
             self.request,
             self.template_name,
-            {"form": form, "page_obj": page, "posts": posts},
+            {"form": form, "page_obj": page, "posts": posts, "feed_items": feed_items},
         )
+        if self.request.method != "HEAD":
+            record_impressions(self.request.user, [i.object for i in feed_items if i.is_ad])
+        return response
 
 
 class PostDetailView(RegularUserRequiredMixin, View):

@@ -1,0 +1,6 @@
+{# One entry of the blended feed. Expects `item` (ads.engine.FeedItem). #}
+{% if item.is_ad %}
+  {% include "ads/_ad_card.html" with ad=item.object sponsor=item.object.sponsor_name tracked=True %}
+{% else %}
+  {% include "posts/_post_card.html" with post=item.object %}
+{% endif %}

@@ -11,8 +11,8 @@
 
   <h1 class="mt-8 mb-4 text-xl font-bold">Your feed</h1>
   <div class="space-y-4">
-    {% for post in posts %}
-      {% include "posts/_post_card.html" %}
+    {% for item in feed_items %}
+      {% include "posts/_feed_item.html" %}
     {% empty %}
       <div class="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
         <p class="font-medium text-slate-700">Your feed is empty.</p>
