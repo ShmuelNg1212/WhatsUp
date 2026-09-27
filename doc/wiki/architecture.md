@@ -7,7 +7,7 @@
 | Framework | Django 6.1.1 |
 | Image handling | Pillow 12.3.0 (required by `ImageField`) |
 | Database | SQLite (development) |
-| Frontend | Server-rendered Django templates + Tailwind CSS v4 browser CDN (dev only; needs a compiled build before production). No JavaScript: every interaction is an HTML form POST or a plain link. Design system: the component classes in `base.html` (`btn`, `btn-primary`, `btn-secondary`, `form-stack`) plus the card style of `posts/_post_card.html`. A "Tailwind UI/UX overhaul" was mentioned in the Slice 4 request but isn't in the repository. |
+| Frontend | Server-rendered Django templates + Tailwind CSS v4 browser CDN (dev only; needs a compiled build before production). No JavaScript: every interaction is an HTML form POST or a plain link; menus use `<details>`. **Design system: [design-system.md](design-system.md)** (Inter, brand pink + sage neutrals, three layouts, `templates/components/`). |
 | Auth | `django.contrib.auth` with a custom user model |
 | Tests | Django's built-in test runner (`TestCase`) |
 
@@ -18,7 +18,8 @@ accounts/          identity + social graph: User, Follow, signup/login/logout, r
 posts/             the social area: Post, Like, Comment, feed/profile/people views, query builders
 ads/               the advertiser portal: AdvertiserProfile, Campaign, AdUnit, ownership mixins, CRUD views
 core/              plain package (not an app) with shared helpers: core/validators.py (image size)
-templates/         all templates, grouped by app; posts/_*.html are reusable partials
+*/templatetags/    UI-only helpers: accounts/templatetags/ui.py, posts/templatetags/social_widgets.py
+templates/         layouts/ (public, social, portal) · components/ (shared UI) · errors/ · per-app folders (partials start with _)
 media/             user uploads (gitignored)
 doc/               study/ (decisions), plan/ (checklists), wiki/ (this)
 ```
@@ -39,7 +40,7 @@ Gating helpers are in `accounts/permissions.py`:
 | Visitor | Result |
 |---|---|
 | Anonymous | 302 → `/accounts/login/?next=<path>` |
-| Logged in, role not allowed | 403 (`templates/403.html`) |
+| Logged in, role not allowed | 403 (`templates/403.html`, rendered inside the viewer's own layout) |
 | Logged in, role allowed | View runs |
 
 Staff and superuser status gives **no** bypass. Admins use `/admin/`.
@@ -85,14 +86,14 @@ Social toggle and create endpoints reject GET with 405. Portal delete routes use
 | `posts_by(author, viewer)` | `/u/<username>/` | Same, filtered to one author |
 | `oldest_first_previews(posts)` | feed, profile | Flips the newest-first comment previews into reading order |
 
-**Queries per page are fixed, whatever the amount of content.** `posts/tests/test_queries.py` and `ads/tests/test_feed_queries.py` lock these numbers:
+**Queries per page are fixed, whatever the amount of content.** Every social page renders the layout's right rail (*Who to follow*, *Trending*), which adds a constant 2 queries (`posts/templatetags/social_widgets.py`). `posts/tests/test_queries.py` and `ads/tests/test_feed_queries.py` lock these numbers:
 
 | Page | Queries | Breakdown |
 |---|---|---|
-| Feed | 5 / 6 / 8 | 5 base (session, user, paginator count, posts with authors, counts and liked_by_me, comment previews). +1 eligible-ad lookup when the page has ≥ 4 posts. +1 ad fetch and +1 impression INSERT when live ads exist. See [Feed ad injection](#feed-ad-injection). |
-| Profile | 7 | session, user, profile user (with follow counts), paginator count, posts, comment previews, is-following check |
-| Post detail | 4 | session, user, post, all comments |
-| People | 4 | session, user, paginator count, people (with counts and followed_by_me) |
+| Feed | 7 / 8 / 10 | 5 base (session, user, paginator count, posts with authors, counts and liked_by_me, comment previews). +1 eligible-ad lookup when the page has ≥ 4 posts. +1 ad fetch and +1 impression INSERT when live ads exist. See [Feed ad injection](#feed-ad-injection). +2 right-rail widgets. |
+| Profile | 9 | session, user, profile user (with follow counts), paginator count, posts, comment previews, is-following check, +2 right-rail widgets |
+| Post detail | 6 | session, user, post, all comments, +2 right-rail widgets |
+| People | 6 | session, user, paginator count, people (with counts and followed_by_me), +2 right-rail widgets |
 
 If any of these tests fails, a template or view has started running a query per item. Fix the query builder; don't change the expected numbers.
 
@@ -126,7 +127,7 @@ record_impressions(user, ads shown)  → 1 bulk INSERT                after a su
 ### Rendering
 - `FeedView.render_feed()` passes `feed_items` (and `posts`, for compatibility) to `posts/feed.html`.
 - `posts/_feed_item.html` dispatches on `item.is_ad` → `ads/_ad_card.html` with `tracked=True`, or on `item.is_post` → `posts/_post_card.html`.
-- `ads/_ad_card.html` matches the post card's layout, with a light indigo border and a **★ SPONSORED** pill (`data-testid="sponsored-tag"`, `aria-label="Sponsored content from …"`). The headline, image, and "Learn more ↗" button all link to the same place:
+- `ads/_ad_card.html` mirrors the post card's layout (see [design-system.md](design-system.md#card-anatomy-post-and-ad-must-stay-in-step)), with a Tea Green ring and a **✦ SPONSORED** pill (`data-testid="sponsored-tag"`, `aria-label="Sponsored content from …"`). The headline, image, and "Learn more ↗" button all link to the same place:
   - `tracked=True` (feed) → `/ads/click/<id>/`
   - not tracked (portal preview) → `target_url` directly, **so previews never generate telemetry**
 
@@ -206,15 +207,17 @@ All are Django generic views, with success messages from `SuccessMessageMixin`.
 - **Authors can't be spoofed:** `author`, `user`, and `follower` always come from `request.user`, never from form data.
 
 ## Templates
-| Template | Purpose |
+The visual conventions, tokens, components, and layout rules are in **[design-system.md](design-system.md)**. Structure:
+
+| Path | Purpose |
 |---|---|
-| `base.html` | Layout, Tailwind, flash messages, nav (`partials/nav.html`: Feed, People, My profile for regular users; Dashboard, New campaign for advertisers) |
-| `posts/_post_card.html` | One post: author link, body, image, like toggle, comment previews, comment form |
-| `posts/_follow_button.html` | Follow/Unfollow form (expects `target`, `following`) |
-| `posts/_pagination.html` | Newer/Older links for any `page_obj` |
+| `base.html` | Document shell: Inter, Tailwind CDN, `@theme` tokens, `@layer components`. Nothing else. |
+| `layouts/public.html` · `social.html` · `portal.html` | Page shells per audience. Every page extends exactly one. `layouts/_portal_nav.html` is shared by the portal sidebar and the mobile menu. |
+| `components/*.html` | Shared UI: icon, avatar, button, badge, form, form_field, messages, empty_state, page_header, metric_card, pagination, follow_button, logo |
+| `403.html`, `404.html` → `errors/40x_page.html` | Error pages in the viewer's layout (`ui|error_layout`) |
+| `landing.html`, `registration/login.html`, `accounts/signup.html` | Public pages |
 | `posts/feed.html`, `detail.html`, `profile.html`, `people.html` | Social pages |
+| `posts/_post_card.html`, `_comment.html`, `_composer.html`, `_feed_item.html`, `widgets/who_to_follow.html`, `widgets/trending.html` | Social partials. `_feed_item` dispatches a `FeedItem` to the post or ad card. |
 | `ads/_ad_card.html` | Sponsored ad card: feed (`tracked=True`, links via the click router) and portal preview (direct links) |
-| `posts/_feed_item.html` | Dispatches one `FeedItem` to the post card or the ad card |
-| `ads/_state_badge.html` | Live / Scheduled / Ended / Inactive badge |
-| `ads/dashboard.html`, `campaign_form.html`, `campaign_detail.html`, `campaign_confirm_delete.html`, `adunit_form.html`, `adunit_confirm_delete.html` | Advertiser portal |
-| `403.html`, `landing.html`, `registration/login.html`, `accounts/signup.html` | Other pages |
+| `ads/dashboard.html`, `campaign_detail.html`, `campaign_form.html`, `adunit_form.html`, `*_confirm_delete.html` | Advertiser portal pages. The delete pages extend `ads/_confirm_delete_base.html`. |
+| `ads/_campaign_row.html`, `_ad_stats.html`, `_state_badge.html` | Portal partials |

@@ -20,6 +20,9 @@
 | Admin | http://127.0.0.1:8000/admin/ |
 | Reset a user's password | `.venv/bin/python manage.py changepassword <username>` |
 
+## Restarting after template-tag changes
+Django registers template-tag libraries (`*/templatetags/*.py`) when the server starts. After **adding a new tag module**, restart `runserver`. Otherwise pages using it return 500 ("… is not a registered tag library"). Template and CSS edits reload automatically.
+
 ## Uploaded media
 Post images are saved in `media/` (gitignored) and served by the dev server at `/media/…`. Passwords are stored as one-way hashes and cannot be read back; reset them instead.
 

@@ -1,7 +1,7 @@
 # Plan: UI/UX Redesign
 - **Date:** 2026-09-27 18:44
 - **Study:** [../study/2026-09-27-1844-ui-ux-overhaul.md](../study/2026-09-27-1844-ui-ux-overhaul.md)
-- **Status:** awaiting-rendezvous
+- **Status:** done
 
 Boundary: **no changes** to any `models.py`, `views.py`, `urls.py`, `forms.py`, `admin.py`, or `config/settings/*`. New Python is limited to `templatetags/`. Test edits are limited to (a) markup → `data-testid` decoupling and (b) query-count constants +2.
 
