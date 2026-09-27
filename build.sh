@@ -1,8 +1,9 @@
-#!/usr/bin/env bash
+#!/bin/sh
 # Render build script. Render dashboard → Build Command: sh build.sh
 # (Start Command: gunicorn config.wsgi:application). See doc/wiki/deployment.md.
+# Keep this POSIX sh: `sh build.sh` runs under dash on Render, so no bash-isms
+# (e.g. `set -o pipefail` is rejected by older dash and would fail the build).
 set -o errexit   # stop (and fail the deploy) on the first error
-set -o pipefail
 
 # manage.py defaults to dev settings; the build must configure production
 # (Neon + Cloudinary + WhiteNoise), otherwise it would silently migrate a

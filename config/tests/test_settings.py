@@ -156,9 +156,15 @@ class LocalSettingsTests(SimpleTestCase):
 class BuildScriptTests(SimpleTestCase):
     script = REPO / "build.sh"
 
-    def test_is_executable_and_valid_bash(self):
+    def test_is_executable_and_valid_posix_sh(self):
         self.assertTrue(os.access(self.script, os.X_OK))
-        self.assertEqual(subprocess.run(["bash", "-n", str(self.script)]).returncode, 0)
+        # Render runs `sh build.sh` (dash): check syntax in POSIX mode and forbid bash-only options.
+        self.assertEqual(subprocess.run(["sh", "-n", str(self.script)]).returncode, 0)
+        self.assertEqual(subprocess.run(["bash", "--posix", "-n", str(self.script)]).returncode, 0)
+        commands = [line.strip() for line in self.script.read_text().splitlines() if not line.lstrip().startswith("#")]
+        for bashism in ("set -o pipefail", "[[", "function ", "source "):
+            with self.subTest(bashism=bashism):
+                self.assertFalse([c for c in commands if bashism in c])
 
     def test_contents(self):
         text = self.script.read_text()
