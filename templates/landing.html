@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Welcome{% endblock %}
+{% block content %}
+<section class="py-12 text-center">
+  <h1 class="text-4xl font-bold tracking-tight">What's up with your people?</h1>
+  <p class="mx-auto mt-4 max-w-xl text-slate-600">
+    Share posts, follow friends, and see what's happening — or reach them with sponsored posts as an advertiser.
+  </p>
+  {% block landing_actions %}{% endblock %}
+</section>
+{% endblock %}

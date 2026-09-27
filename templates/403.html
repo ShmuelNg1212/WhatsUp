@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Access denied{% endblock %}
+{% block content %}
+<section class="py-12 text-center">
+  <p class="text-sm font-semibold text-red-600">403</p>
+  <h1 class="mt-2 text-3xl font-bold">You can't access this page</h1>
+  <p class="mt-4 text-slate-600">This area is for a different account type.</p>
+  <a href="{% url 'home' %}" class="btn btn-primary mt-6">Go to your home</a>
+</section>
+{% endblock %}
