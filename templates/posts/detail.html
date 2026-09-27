@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}Post by {{ post.author.username }}{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-2xl">
+  <a href="{% url 'posts:feed' %}" class="text-sm text-indigo-600 hover:underline">← Back to feed</a>
+  <div class="mt-4">{% include "posts/_post_card.html" %}</div>
+</div>
+{% endblock %}
