@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Discover people{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-2xl">
+  <h1 class="mb-4 text-xl font-bold">Discover people</h1>
+  <ul class="divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white shadow-sm">
+    {% for person in people %}
+      <li class="flex items-center justify-between px-5 py-3">
+        <div>
+          <a href="{% url 'posts:profile' person.username %}" class="font-semibold hover:underline">{{ person.username }}</a>
+          <p class="text-xs text-slate-500">{{ person.follower_count }} follower{{ person.follower_count|pluralize }} · {{ person.following_count }} following</p>
+        </div>
+        {% include "posts/_follow_button.html" with target=person following=person.followed_by_me %}
+      </li>
+    {% empty %}
+      <li class="px-5 py-10 text-center text-slate-500">No one else is here yet.</li>
+    {% endfor %}
+  </ul>
+  {% include "posts/_pagination.html" %}
+</div>
+{% endblock %}

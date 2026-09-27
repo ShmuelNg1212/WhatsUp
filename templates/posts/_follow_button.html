@@ -1,0 +1,10 @@
+{# Expects `target` (a User) and `following` (bool). #}
+<form method="post" action="{% url 'posts:follow' target.username %}">
+  {% csrf_token %}
+  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+  {% if following %}
+    <button type="submit" class="btn btn-secondary py-1.5 text-sm">Unfollow</button>
+  {% else %}
+    <button type="submit" class="btn btn-primary py-1.5 text-sm">Follow</button>
+  {% endif %}
+</form>

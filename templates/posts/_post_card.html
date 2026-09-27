@@ -2,7 +2,7 @@
 {% load humanize %}
 <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm scroll-mt-4" id="post-{{ post.pk }}">
   <header class="flex items-center justify-between">
-    <span class="font-semibold">{{ post.author.username }}</span>
+    <a href="{% url 'posts:profile' post.author.username %}" class="font-semibold hover:underline">{{ post.author.username }}</a>
     <a href="{{ post.get_absolute_url }}" class="text-xs text-slate-500 hover:underline">
       <time datetime="{{ post.created_at|date:'c' }}">{{ post.created_at|naturaltime }}</time>
     </a>
@@ -28,7 +28,7 @@
   {% if post.shown_comments %}
     <ul class="mt-4 space-y-2 border-t border-slate-100 pt-4 text-sm">
       {% for comment in post.shown_comments %}
-        <li><span class="font-semibold">{{ comment.author.username }}</span> <span class="whitespace-pre-line break-words">{{ comment.body }}</span></li>
+        <li><a href="{% url 'posts:profile' comment.author.username %}" class="font-semibold hover:underline">{{ comment.author.username }}</a> <span class="whitespace-pre-line break-words">{{ comment.body }}</span></li>
       {% endfor %}
     </ul>
     {% if post.comment_count > post.shown_comments|length %}

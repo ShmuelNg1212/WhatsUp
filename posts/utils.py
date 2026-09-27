@@ -10,3 +10,4 @@ def redirect_back(request, fallback):
     ):
         return redirect(target)
     return redirect(fallback)
+

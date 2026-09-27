@@ -1,14 +1,16 @@
 from django.contrib import messages
 from django.core.paginator import Paginator
+from django.db.models import Count, Exists, OuterRef
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views import View
 
-from accounts.models import User
+from accounts.models import Follow, User
 from accounts.permissions import RoleRequiredMixin
 
 from .forms import CommentForm, PostForm
 from .models import Like, Post
-from .queries import annotated_posts, feed_for, oldest_first_previews
+from .queries import annotated_posts, feed_for, oldest_first_previews, posts_by
 from .utils import redirect_back
 
 POSTS_PER_PAGE = 20
@@ -85,3 +87,73 @@ class CommentCreateView(RegularUserRequiredMixin, View):
         else:
             messages.error(request, " ".join(form.errors.get("body", ["Invalid comment."])))
         return redirect_back(request, fallback=post.get_absolute_url())
+
+
+PEOPLE_PER_PAGE = 30
+
+
+def regular_users_with_counts():
+    return User.objects.filter(role=User.Role.REGULAR_USER).annotate(
+        follower_count=Count("follower_edges", distinct=True),
+        following_count=Count("following_edges", distinct=True),
+    )
+
+
+class ProfileView(RegularUserRequiredMixin, View):
+    """A regular user's public profile: counts, follow toggle, and their posts."""
+
+    def get(self, request, username):
+        profile_user = get_object_or_404(regular_users_with_counts(), username=username)
+        page, posts = paginate_posts(request, posts_by(profile_user, request.user))
+        is_following = Follow.objects.filter(
+            follower=request.user, following=profile_user
+        ).exists()
+        return render(
+            request,
+            "posts/profile.html",
+            {
+                "profile_user": profile_user,
+                "is_following": is_following,
+                "is_self": profile_user == request.user,
+                "page_obj": page,
+                "posts": posts,
+            },
+        )
+
+
+class FollowToggleView(RegularUserRequiredMixin, View):
+    """POST: follow the user, or unfollow if already following."""
+
+    http_method_names = ["post"]
+
+    def post(self, request, username):
+        target = get_object_or_404(User, username=username, role=User.Role.REGULAR_USER)
+        fallback = reverse("posts:profile", args=[target.username])
+        if target == request.user:
+            messages.error(request, "You can't follow yourself.")
+            return redirect_back(request, fallback=fallback)
+        follow, created = Follow.objects.get_or_create(follower=request.user, following=target)
+        if created:
+            messages.success(request, f"You're now following {target.username}.")
+        else:
+            follow.delete()
+            messages.success(request, f"You unfollowed {target.username}.")
+        return redirect_back(request, fallback=fallback)
+
+
+class PeopleView(RegularUserRequiredMixin, View):
+    """Discover other regular users to follow."""
+
+    def get(self, request):
+        people = (
+            regular_users_with_counts()
+            .exclude(pk=request.user.pk)
+            .annotate(
+                followed_by_me=Exists(
+                    Follow.objects.filter(follower=request.user, following=OuterRef("pk"))
+                )
+            )
+            .order_by("username")
+        )
+        page = Paginator(people, PEOPLE_PER_PAGE).get_page(request.GET.get("page"))
+        return render(request, "posts/people.html", {"page_obj": page, "people": page.object_list})
